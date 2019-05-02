@@ -46,6 +46,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun noelshackToDirectLink(baseLink: String): String {
+        var link = baseLink
+        if (link.contains("noelshack.com/")) {
+            link = link.substring(link.indexOf("noelshack.com/") + 14)
+        } else {
+            return link
+        }
+
+        link = if (link.startsWith("fichiers/") || link.startsWith("fichiers-xs/") || link.startsWith("minis/")) {
+            link.substring(link.indexOf("/") + 1)
+        } else {
+            link.replaceFirst("-", "/").replaceFirst("-", "/")
+        }
+
+        //moyen dégueulasse pour checker si le lien utilise le nouveau format (deux nombres entre l'année et le timestamp au lieu d'un)
+        if (link.contains("/")) {
+            var checkForNewStringType = link.substring(link.lastIndexOf("/") + 1)
+
+            if (checkForNewStringType.contains("-")) {
+                checkForNewStringType = checkForNewStringType.substring(0, checkForNewStringType.indexOf("-"))
+
+                if (checkForNewStringType.matches("[0-9]{1,8}".toRegex())) {
+                    link = link.replaceFirst("-", "/")
+                }
+            }
+        }
+
+        return "http://image.noelshack.com/fichiers/$link"
+    }
+
     private fun getFileName(uri: Uri): String {
         var result: String? = null
         if (uri.scheme == "content") {
@@ -91,7 +121,7 @@ class MainActivity : AppCompatActivity() {
             return if (responseString.isNullOrEmpty()) {
                 getString(R.string.errorMessage, null.toString())
             } else {
-                responseString
+                noelshackToDirectLink(responseString)
             }
         } catch (e: Exception) {
             return getString(R.string.errorMessage, e.toString())
