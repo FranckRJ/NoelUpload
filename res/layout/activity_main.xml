@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:targetApi="28">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/half_guideline_main"
@@ -16,19 +18,20 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.15" />
+        app:layout_constraintGuide_percent="0.10" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/lastpart_guideline_main"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.85" />
+        app:layout_constraintGuide_percent="0.90" />
 
     <Button
         android:id="@+id/choose_image_button_main"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:labelFor="@+id/last_image_choosed_edit_main"
         android:text="@string/chooseAnImage"
         app:layout_constraintBottom_toTopOf="@+id/upload_button_main"
         app:layout_constraintEnd_toStartOf="@+id/half_guideline_main"
@@ -36,13 +39,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
 
-    <TextView
-        android:id="@+id/last_image_choosed_text_main"
+    <EditText
+        android:id="@+id/last_image_choosed_edit_main"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="4dp"
+        android:cursorVisible="false"
+        android:importantForAutofill="no"
+        android:inputType="text"
         android:maxLines="1"
+        android:scrollHorizontally="true"
         app:layout_constraintBottom_toBottomOf="@+id/choose_image_button_main"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/half_guideline_main"
@@ -60,10 +67,10 @@
 
     <TextView
         android:id="@+id/link_of_last_image_uploaded_text_main"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minLines="2"
         android:gravity="center"
+        android:minLines="2"
         app:layout_constraintBottom_toTopOf="@id/copy_last_image_uploaded_link_button_main"
         app:layout_constraintEnd_toStartOf="@id/lastpart_guideline_main"
         app:layout_constraintStart_toEndOf="@+id/firstpart_guideline_main"

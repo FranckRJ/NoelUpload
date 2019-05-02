@@ -152,12 +152,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         lastImageChoosedUri.observe(this, Observer { newUri: Uri? ->
-            last_image_choosed_text_main.text = getFileName(newUri ?: Uri.EMPTY)
+            last_image_choosed_edit_main.setText(getFileName(newUri ?: Uri.EMPTY))
         })
 
         lastImageUploadedLink.observe(this, Observer { newLink: String? ->
             link_of_last_image_uploaded_text_main.text = newLink ?: ""
         })
+
+        last_image_choosed_edit_main.keyListener = null
 
         choose_image_button_main.setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
