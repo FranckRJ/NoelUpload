@@ -7,7 +7,6 @@ import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.widget.Toast
-import android.util.Log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
@@ -73,49 +72,36 @@ class MainActivity : AppCompatActivity() {
         return result
     }
 
-    private suspend fun uploadImage(fileContent: ByteArray, fileName: String, fileType: String): String? {
+    private fun uploadImage(fileContent: ByteArray, fileName: String, fileType: String): String {
         try {
             val mediaTypeForFile = MediaType.parse(fileType)
-
-            Log.d("uploadinfos", "Upload request building...")
-
             val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("fichier", fileName, RequestBody.create(mediaTypeForFile, fileContent)).build()
-
             val request = Request.Builder()
                 .url("http://www.noelshack.com/api.php")
                 .post(req)
                 .build()
-
-            Log.d("uploadinfos", "Upload request uploading...")
 
             val client = OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.MINUTES)
                 .writeTimeout(10, TimeUnit.SECONDS)
                 .build()
-            val response = client.newCall(request).execute()
-            val responseString: String = response.body()?.string() ?: ""
+            val responseString: String? = client.newCall(request).execute().body()?.string()
 
-            Log.d("uploadinfos", "Upload response : $responseString")
-            withContext(Dispatchers.Main) {
-                lastImageUploadedLink.value = responseString
+            return if (responseString.isNullOrEmpty()) {
+                getString(R.string.errorMessage, null.toString())
+            } else {
+                responseString
             }
         } catch (e: Exception) {
-            Log.d("uploadinfos", "Error : $e")
+            return getString(R.string.errorMessage, e.toString())
         }
-
-        return null
     }
 
     private fun startUploadThisImage(uri: Uri?) {
-        Log.d("uploadinfos", "Upload filepath : $uri")
-
         if (uri != null) {
             GlobalScope.launch {
                 try {
-                    Log.d("uploadinfos", "Upload filename : " + getFileName(uri))
-                    Log.d("uploadinfos", "Upload filetype : " + contentResolver?.getType(uri))
-
                     val result = contentResolver?.openInputStream(uri)?.use { inputStream ->
                         val tmpResult = ByteArrayOutputStream()
                         val buffer = ByteArray(8192)
@@ -127,20 +113,24 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     if (result != null) {
-                        uploadImage(
-                            result.toByteArray(),
-                            getFileName(uri),
-                            contentResolver?.getType(uri) ?: "image/*"
-                        )
+                        val uploadResponse: String = uploadImage(result.toByteArray(), getFileName(uri), contentResolver?.getType(uri) ?: "image/*")
+
+                        withContext(Dispatchers.Main) {
+                            lastImageUploadedLink.value = uploadResponse
+                        }
                     } else {
-                        Log.d("uploadinfos", "GlobError : lolresultnull")
+                        withContext(Dispatchers.Main) {
+                            lastImageUploadedLink.value = getString(R.string.invalid_file)
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.d("uploadinfos", "GlobError : $e")
+                    withContext(Dispatchers.Main) {
+                        lastImageUploadedLink.value = getString(R.string.errorMessage, e.toString())
+                    }
                 }
             }
         } else {
-            Log.d("uploadinfos", "GlobError : lolurinull")
+            Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -150,9 +140,6 @@ class MainActivity : AppCompatActivity() {
 
         val tmpIntent: Intent? = intent
         if (savedInstanceState == null && tmpIntent != null) {
-            if (tmpIntent.action == Intent.ACTION_SEND) {
-                Log.d("uploadinfos", "From start intent")
-            }
             if (tmpIntent.action == Intent.ACTION_SEND && tmpIntent.hasExtra(Intent.EXTRA_STREAM)) {
                 val newUri: Uri? = tmpIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
@@ -183,13 +170,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         upload_button_main.setOnClickListener {
+            lastImageUploadedLink.value = ""
             startUploadThisImage(lastImageChoosedUri.value)
         }
 
         copy_last_image_uploaded_link_button_main.setOnClickListener {
             val lastLink: String? = lastImageUploadedLink.value
-            if (!lastLink.isNullOrEmpty()) {
+            if (!lastLink.isNullOrEmpty() && lastLink.startsWith("http")) {
                 putStringInClipboard(lastLink)
+                Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, R.string.invalid_link, Toast.LENGTH_SHORT).show()
             }
@@ -210,7 +199,6 @@ class MainActivity : AppCompatActivity() {
     public override fun onNewIntent(newIntent: Intent?) {
         super.onNewIntent(newIntent)
 
-        Log.d("uploadinfos", "From new intent")
         if (newIntent != null) {
             if (newIntent.action == Intent.ACTION_SEND && newIntent.hasExtra(Intent.EXTRA_STREAM)) {
                 val newUri: Uri? = newIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
@@ -225,7 +213,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        Log.d("uploadinfos", "From activity result")
         if (resultCode == Activity.RESULT_OK && data?.data != null) {
             lastImageChoosedUri.value = data.data
         } else {

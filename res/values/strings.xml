@@ -6,4 +6,6 @@
     <string name="upload">Upload</string>
     <string name="invalid_file">Erreur, le fichier est invalide.</string>
     <string name="invalid_link">Erreur, le lien est invalide.</string>
+    <string name="errorMessage">Erreur : %1$s.</string>
+    <string name="link_copied">Lien copié.</string>
 </resources>
