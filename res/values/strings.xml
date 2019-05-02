@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">NoelUpload</string>
+    <string name="file_manager_not_found">Pas de gestionnaire de fichier trouvé, veuillez en installer un.</string>
+    <string name="chooseAnImage">Choisir une image</string>
+    <string name="copyLink">Copier le lien</string>
+    <string name="upload">Upload</string>
+    <string name="invalid_file">Erreur, le fichier est invalide.</string>
+    <string name="invalid_link">Erreur, le lien est invalide.</string>
+</resources>
