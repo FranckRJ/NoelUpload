@@ -25,6 +25,7 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -87,7 +88,11 @@ class MainActivity : AppCompatActivity() {
 
             Log.d("uploadinfos", "Upload request uploading...")
 
-            val client = OkHttpClient()
+            val client = OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.MINUTES)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .build()
             val response = client.newCall(request).execute()
             val responseString: String = response.body()?.string() ?: ""
 
