@@ -31,7 +31,7 @@
         android:id="@+id/choose_image_button_main"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:labelFor="@+id/last_image_choosed_edit_main"
+        android:labelFor="@+id/curr_image_choosed_edit_main"
         android:text="@string/chooseAnImage"
         app:layout_constraintBottom_toTopOf="@+id/upload_button_main"
         app:layout_constraintEnd_toStartOf="@+id/half_guideline_main"
@@ -40,7 +40,7 @@
         app:layout_constraintVertical_chainStyle="packed" />
 
     <EditText
-        android:id="@+id/last_image_choosed_edit_main"
+        android:id="@+id/curr_image_choosed_edit_main"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
@@ -60,13 +60,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/upload"
-        app:layout_constraintBottom_toTopOf="@+id/link_of_last_image_uploaded_text_main"
+        app:layout_constraintBottom_toTopOf="@+id/info_of_last_image_uploaded_text_main"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/choose_image_button_main" />
 
     <TextView
-        android:id="@+id/link_of_last_image_uploaded_text_main"
+        android:id="@+id/info_of_last_image_uploaded_text_main"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -84,6 +84,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/link_of_last_image_uploaded_text_main" />
+        app:layout_constraintTop_toBottomOf="@+id/info_of_last_image_uploaded_text_main" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
