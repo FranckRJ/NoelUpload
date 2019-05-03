@@ -28,6 +28,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private var _firstTimeRestoreIsCalled: Boolean = true
+    private var _isInUpload: Boolean = false
 
     private val _currImageChoosedUri: MutableLiveData<Uri?> = MutableLiveData()
     private val _lastImageUploadedInfo: MutableLiveData<String?> = MutableLiveData()
@@ -120,6 +121,13 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private suspend fun uploadOfAnImageEnded(newUploadImageInfo: String) {
+        withContext(Dispatchers.Main) {
+            _lastImageUploadedInfo.value = newUploadImageInfo
+            _isInUpload = false
+        }
+    }
+
     fun restoreSavedData(savedInstanceState: Bundle?) {
         if (savedInstanceState != null && _firstTimeRestoreIsCalled) {
             _currImageChoosedUri.value = savedInstanceState.getParcelable(SAVE_LAST_IMAGE_CHOOSED_URI) as? Uri
@@ -143,36 +151,39 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
         _lastImageUploadedInfo.value = ""
         if (uri != null) {
-            GlobalScope.launch {
-                try {
-                    val result = app.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        val tmpResult = ByteArrayOutputStream()
-                        val buffer = ByteArray(8192)
-                        var length = 0
-                        while ({ length = inputStream.read(buffer); length }() != -1) {
-                            tmpResult.write(buffer, 0, length)
+            if (!_isInUpload) {
+                _isInUpload = true
+                GlobalScope.launch {
+                    try {
+                        val result = app.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            val tmpResult = ByteArrayOutputStream()
+                            val buffer = ByteArray(8192)
+                            var length = 0
+                            while ({ length = inputStream.read(buffer); length }() != -1) {
+                                tmpResult.write(buffer, 0, length)
+                            }
+                            tmpResult
                         }
-                        tmpResult
-                    }
 
-                    if (result != null) {
-                        val uploadResponse: String = uploadImage(result.toByteArray(), getFileName(uri), app.contentResolver.getType(uri) ?: "image/*")
+                        if (result != null) {
+                            val uploadResponse: String = uploadImage(
+                                result.toByteArray(),
+                                getFileName(uri),
+                                app.contentResolver.getType(uri) ?: "image/*"
+                            )
 
-                        withContext(Dispatchers.Main) {
-                            _lastImageUploadedInfo.value = uploadResponse
+                            uploadOfAnImageEnded(uploadResponse)
+                        } else {
+                            uploadOfAnImageEnded(app.getString(R.string.invalid_file))
                         }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            _lastImageUploadedInfo.value = app.getString(R.string.invalid_file)
-                        }
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        _lastImageUploadedInfo.value = app.getString(R.string.errorMessage, e.toString())
+                    } catch (e: Exception) {
+                        uploadOfAnImageEnded(app.getString(R.string.errorMessage, e.toString()))
                     }
                 }
+                return null
+            } else {
+                return app.getString(R.string.upload_already_running)
             }
-            return null
         } else {
             return app.getString(R.string.invalid_file)
         }
