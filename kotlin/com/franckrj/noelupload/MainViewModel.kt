@@ -34,7 +34,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _lastImageUploadedInfo: MutableLiveData<String?> = MutableLiveData()
 
     val currImageChoosedUri: LiveData<Uri?> = _currImageChoosedUri
-    val lastImageChoosedName: LiveData<String?> = Transformations.map(currImageChoosedUri) {
+    val currImageChoosedName: LiveData<String?> = Transformations.map(currImageChoosedUri) {
         getFileName(it ?: Uri.EMPTY)
     }
     val lastImageUploadedInfo: LiveData<String?> = _lastImageUploadedInfo

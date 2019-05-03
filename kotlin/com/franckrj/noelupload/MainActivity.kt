@@ -9,8 +9,9 @@ import android.widget.Toast
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.lifecycle.Observer
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
+import com.franckrj.noelupload.databinding.ActivityMainBinding
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -29,11 +30,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    public override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
+        val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         mainViewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
+        binding.lifecycleOwner = this
+        binding.activity = this
+        binding.viewmodel = mainViewModel
 
         val tmpIntent: Intent? = intent
         if (savedInstanceState == null && tmpIntent != null) {
@@ -48,55 +52,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        mainViewModel.lastImageChoosedName.observe(this, Observer { newName: String? ->
-            curr_image_choosed_edit_main.setText(newName ?: "")
-        })
-
-        mainViewModel.lastImageUploadedInfo.observe(this, Observer { newInfo: String? ->
-            info_of_last_image_uploaded_text_main.text = newInfo ?: ""
-        })
-
         curr_image_choosed_edit_main.keyListener = null
-
-        choose_image_button_main.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT)
-            intent.type = "image/*"
-            try {
-                startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
-            } catch (e : Exception) {
-                Toast.makeText(this, R.string.file_manager_not_found, Toast.LENGTH_LONG).show()
-            }
-        }
-
-        upload_button_main.setOnClickListener {
-            val errorMessage: String? = mainViewModel.startUploadCurrentImage()
-
-            if (errorMessage != null) {
-                Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        copy_last_image_uploaded_link_button_main.setOnClickListener {
-            val lastLink: String? = mainViewModel.lastImageUploadedInfo.value
-            if (!lastLink.isNullOrEmpty() && lastLink.startsWith("http")) {
-                putStringInClipboard(lastLink)
-                Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, R.string.invalid_link, Toast.LENGTH_SHORT).show()
-            }
-        }
 
         mainViewModel.restoreSavedData(savedInstanceState)
     }
 
-    public override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
         if (outState != null) {
             mainViewModel.onSaveData(outState)
         }
     }
 
-    public override fun onNewIntent(newIntent: Intent?) {
+    override fun onNewIntent(newIntent: Intent?) {
         super.onNewIntent(newIntent)
 
         if (newIntent != null) {
@@ -112,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val newUri: Uri? = data?.data
 
         if (resultCode == Activity.RESULT_OK && newUri != null) {
@@ -122,5 +90,33 @@ class MainActivity : AppCompatActivity() {
         }
 
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    fun chooseAnImage() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "image/*"
+        try {
+            startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
+        } catch (e : Exception) {
+            Toast.makeText(this, R.string.file_manager_not_found, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun startUploadCurrentImage() {
+        val errorMessage: String? = mainViewModel.startUploadCurrentImage()
+
+        if (errorMessage != null) {
+            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun copyLastImageUploadedLinkToClipboard() {
+        val lastLink: String? = mainViewModel.lastImageUploadedInfo.value
+        if (!lastLink.isNullOrEmpty() && lastLink.startsWith("http")) {
+            putStringInClipboard(lastLink)
+            Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, R.string.invalid_link, Toast.LENGTH_SHORT).show()
+        }
     }
 }
