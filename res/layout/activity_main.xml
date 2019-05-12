@@ -46,7 +46,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:labelFor="@+id/curr_image_choosed_edit_main"
-            android:onClick="@{() -> activity.chooseAnImage()}"
+            android:onClick='@{() -> activity.chooseAnImage()}'
             android:text="@string/chooseAnImage"
             app:layout_constraintBottom_toTopOf="@+id/upload_button_main"
             app:layout_constraintEnd_toStartOf="@+id/half_guideline_main"
@@ -65,7 +65,7 @@
             android:inputType="text"
             android:maxLines="1"
             android:scrollHorizontally="true"
-            android:text="@{viewmodel.currImageChoosedName}"
+            android:text='@{viewmodel.currImageChoosedName ?? ""}'
             app:layout_constraintBottom_toBottomOf="@+id/choose_image_button_main"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/half_guideline_main"
@@ -75,7 +75,7 @@
             android:id="@+id/upload_button_main"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="@{() -> activity.startUploadCurrentImage()}"
+            android:onClick='@{() -> activity.startUploadCurrentImage()}'
             android:text="@string/upload"
             app:layout_constraintBottom_toTopOf="@+id/info_of_last_image_uploaded_text_main"
             app:layout_constraintEnd_toEndOf="parent"
@@ -88,7 +88,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:minLines="2"
-            android:text="@{viewmodel.lastImageUploadedInfo}"
+            android:text='@{viewmodel.lastImageUploadedInfo ?? ""}'
             app:layout_constraintBottom_toTopOf="@id/copy_last_image_uploaded_link_button_main"
             app:layout_constraintEnd_toStartOf="@id/lastpart_guideline_main"
             app:layout_constraintStart_toEndOf="@+id/firstpart_guideline_main"
@@ -98,7 +98,7 @@
             android:id="@+id/copy_last_image_uploaded_link_button_main"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="@{() -> activity.copyLastImageUploadedLinkToClipboard()}"
+            android:onClick='@{() -> activity.copyLastImageUploadedLinkToClipboard()}'
             android:text="@string/copyLink"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
