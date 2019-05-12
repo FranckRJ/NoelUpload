@@ -60,6 +60,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
+            android:backgroundTint="@color/colorControlHighlight"
             android:cursorVisible="false"
             android:importantForAutofill="no"
             android:inputType="text"
@@ -69,7 +70,10 @@
             app:layout_constraintBottom_toBottomOf="@+id/choose_image_button_main"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/half_guideline_main"
-            app:layout_constraintTop_toTopOf="@+id/choose_image_button_main" />
+            app:layout_constraintTop_toTopOf="@+id/choose_image_button_main">
+
+            <requestFocus />
+        </EditText>
 
         <Button
             android:id="@+id/upload_button_main"
@@ -86,8 +90,10 @@
             android:id="@+id/info_of_last_image_uploaded_text_main"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@drawable/solidborder"
             android:gravity="center"
-            android:minLines="2"
+            android:minLines="3"
+            android:padding="4dp"
             android:text='@{viewmodel.lastImageUploadedInfo ?? ""}'
             app:layout_constraintBottom_toTopOf="@id/copy_last_image_uploaded_link_button_main"
             app:layout_constraintEnd_toStartOf="@id/lastpart_guideline_main"
