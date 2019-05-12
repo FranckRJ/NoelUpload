@@ -8,9 +8,9 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
+import androidx.lifecycle.map
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType
@@ -21,6 +21,7 @@ import okhttp3.RequestBody
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
+//todo SaveStateHandle regarder où c'est ce que c'est etc
 class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     companion object {
         private const val SAVE_LAST_IMAGE_CHOOSED_URI = "SAVE_LAST_IMAGE_CHOOSED_URI"
@@ -34,7 +35,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _lastImageUploadedInfo: MutableLiveData<String?> = MutableLiveData()
 
     val currImageChoosedUri: LiveData<Uri?> = _currImageChoosedUri
-    val currImageChoosedName: LiveData<String?> = Transformations.map(currImageChoosedUri) {
+    val currImageChoosedName: LiveData<String?> = currImageChoosedUri.map {
         getFileName(it ?: Uri.EMPTY)
     }
     val lastImageUploadedInfo: LiveData<String?> = _lastImageUploadedInfo
@@ -121,11 +122,9 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private suspend fun uploadOfAnImageEnded(newUploadImageInfo: String) {
-        withContext(Dispatchers.Main) {
-            _lastImageUploadedInfo.value = newUploadImageInfo
-            _isInUpload = false
-        }
+    private suspend fun uploadOfAnImageEnded(newUploadImageInfo: String) = withContext(Dispatchers.Main) {
+        _lastImageUploadedInfo.value = newUploadImageInfo
+        _isInUpload = false
     }
 
     fun restoreSavedData(savedInstanceState: Bundle?) {
@@ -153,24 +152,28 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         if (uri != null) {
             if (!_isInUpload) {
                 _isInUpload = true
-                GlobalScope.launch {
+                viewModelScope.launch {
                     try {
-                        val result = app.contentResolver.openInputStream(uri)?.use { inputStream ->
-                            val tmpResult = ByteArrayOutputStream()
-                            val buffer = ByteArray(8192)
-                            var length = 0
-                            while ({ length = inputStream.read(buffer); length }() != -1) {
-                                tmpResult.write(buffer, 0, length)
+                        val result = withContext(Dispatchers.IO) {
+                            app.contentResolver.openInputStream(uri)?.use { inputStream ->
+                                val tmpResult = ByteArrayOutputStream()
+                                val buffer = ByteArray(8192)
+                                var length = 0
+                                while ({ length = inputStream.read(buffer); length }() != -1) {
+                                    tmpResult.write(buffer, 0, length)
+                                }
+                                tmpResult
                             }
-                            tmpResult
                         }
 
                         if (result != null) {
-                            val uploadResponse: String = uploadImage(
-                                result.toByteArray(),
-                                getFileName(uri),
-                                app.contentResolver.getType(uri) ?: "image/*"
-                            )
+                            val uploadResponse: String = withContext(Dispatchers.IO) {
+                                uploadImage(
+                                    result.toByteArray(),
+                                    getFileName(uri),
+                                    app.contentResolver.getType(uri) ?: "image/*"
+                                )
+                            }
 
                             uploadOfAnImageEnded(uploadResponse)
                         } else {

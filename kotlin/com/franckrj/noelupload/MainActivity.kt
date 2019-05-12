@@ -12,13 +12,15 @@ import android.content.Context
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
 import com.franckrj.noelupload.databinding.ActivityMainBinding
-import kotlinx.android.synthetic.main.activity_main.*
 
+//todo il y avait pas une histoire avec un paramètre de constructeur pour spécifier le layout ?
 class MainActivity : AppCompatActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE : Int = 38
     }
 
+    //val dfsdf: MainViewModel by viewModels()
+    //todo check ktx pour ça
     private lateinit var mainViewModel: MainViewModel
 
     private fun putStringInClipboard(textToCopy: String) {
@@ -52,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        curr_image_choosed_edit_main.keyListener = null
+        binding.currImageChoosedEditMain.keyListener = null
 
         mainViewModel.restoreSavedData(savedInstanceState)
     }
