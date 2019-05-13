@@ -9,4 +9,5 @@
     <string name="errorMessage">Erreur : %1$s.</string>
     <string name="link_copied">Lien copié.</string>
     <string name="upload_already_running">Erreur, un upload est déjà en cours.</string>
+    <string name="uploadProgress">%1$s%%</string>
 </resources>

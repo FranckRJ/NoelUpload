@@ -17,7 +17,6 @@ import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
@@ -96,10 +95,18 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         return result
     }
 
+    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) {
+        viewModelScope.launch {
+            withContext(Dispatchers.Main) {
+                _lastImageUploadedInfo.value = app.getString(R.string.uploadProgress, ((bytesSended * 100) / totalBytesToSend).toString())
+            }
+        }
+    }
+
     private fun uploadImage(fileContent: ByteArray, fileName: String, fileType: String): String {
         try {
             val mediaTypeForFile = MediaType.parse(fileType)
-            val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("fichier", fileName, RequestBody.create(mediaTypeForFile, fileContent)).build()
+            val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("fichier", fileName, ProgressRequestBody(mediaTypeForFile, fileContent, ::uploadProgressChanged)).build()
             val request = Request.Builder()
                 .url("http://www.noelshack.com/api.php")
                 .post(req)
