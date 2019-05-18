@@ -2,16 +2,16 @@ package com.franckrj.noelupload
 
 import android.app.Activity
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
-import com.franckrj.noelupload.databinding.ActivityMainBinding
+import com.franckrj.noelupload.databinding.ActivityUploadBinding
 
 //todo il y avait pas une histoire avec un paramètre de constructeur pour spécifier le layout ?
-class UploadActivity : AppCompatActivity() {
+class UploadActivity : AbsToolbarActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
     }
@@ -41,18 +41,20 @@ class UploadActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        val binding: ActivityUploadBinding = DataBindingUtil.setContentView(this, R.layout.activity_upload)
         uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
         binding.viewmodel = uploadViewModel
+
+        initToolbar(binding.toolbarUpload as Toolbar, false)
 
         if (savedInstanceState == null) {
             consumeIntent(intent)
         }
 
         /* Pour désactiver l'édition de l'EditText en le faisant buger le moins possible. */
-        binding.currImageChoosedEditMain.keyListener = null
+        binding.currImageChoosedEditUpload.keyListener = null
 
         uploadViewModel.restoreSavedData(savedInstanceState)
     }
