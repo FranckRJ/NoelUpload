@@ -22,7 +22,10 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
-class MainViewModel(private val app: Application) : AndroidViewModel(app) {
+/**
+ * ViewModel contenant les diverses informations pour upload un fichier.
+ */
+class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     companion object {
         private const val SAVE_LAST_IMAGE_CHOOSED_URI = "SAVE_LAST_IMAGE_CHOOSED_URI"
         private const val SAVE_LAST_IMAGE_UPLOADED_INFO = "SAVE_LAST_IMAGE_UPLOADED_INFO"
@@ -148,7 +151,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Sauvegarde les informations necessaires sur le [MainViewModel] dans le [outState].
+     * Sauvegarde les informations necessaires pour le [UploadViewModel] dans le [outState].
      */
     fun onSaveData(outState: Bundle) {
         outState.putParcelable(SAVE_LAST_IMAGE_CHOOSED_URI, _currImageChoosedUri.value)

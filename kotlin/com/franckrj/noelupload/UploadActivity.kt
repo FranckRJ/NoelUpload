@@ -11,14 +11,14 @@ import androidx.lifecycle.ViewModelProviders
 import com.franckrj.noelupload.databinding.ActivityMainBinding
 
 //todo il y avait pas une histoire avec un paramètre de constructeur pour spécifier le layout ?
-class MainActivity : AppCompatActivity() {
+class UploadActivity : AppCompatActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
     }
 
-    //private val mainViewModel: MainViewModel by viewModels()
+    //private val uploadViewModel: UploadViewModel by viewModels()
     //todo check ktx pour ça
-    private lateinit var mainViewModel: MainViewModel
+    private lateinit var uploadViewModel: UploadViewModel
 
     /**
      * Consomme le [currIntent], s'il est du bon type initialise la nouvelle image à upload s'il est valide,
@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
                 val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
                 if (newUri != null) {
-                    mainViewModel.setCurrentUri(newUri)
+                    uploadViewModel.setCurrentUri(newUri)
                 } else {
                     Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
                 }
@@ -42,10 +42,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        mainViewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
+        uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
-        binding.viewmodel = mainViewModel
+        binding.viewmodel = uploadViewModel
 
         if (savedInstanceState == null) {
             consumeIntent(intent)
@@ -54,12 +54,12 @@ class MainActivity : AppCompatActivity() {
         /* Pour désactiver l'édition de l'EditText en le faisant buger le moins possible. */
         binding.currImageChoosedEditMain.keyListener = null
 
-        mainViewModel.restoreSavedData(savedInstanceState)
+        uploadViewModel.restoreSavedData(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mainViewModel.onSaveData(outState)
+        uploadViewModel.onSaveData(outState)
     }
 
     /**
@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == CHOOSE_IMAGE_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK && newUri != null) {
-                mainViewModel.setCurrentUri(newUri)
+                uploadViewModel.setCurrentUri(newUri)
             } else {
                 Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
             }
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
      * Commence l'upload de l'image sélectionnée, affiche une erreur en cas d'erreur.
      */
     fun startUploadCurrentImage() {
-        val errorMessage: String? = mainViewModel.startUploadCurrentImage()
+        val errorMessage: String? = uploadViewModel.startUploadCurrentImage()
 
         if (errorMessage != null) {
             Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
      * Si le lien de la dernière image uploadée est valide l'ajoute dans le presse-papier, sinon affiche une erreur.
      */
     fun copyLastImageUploadedLinkToClipboard() {
-        val lastLink: String? = mainViewModel.lastImageUploadedInfo.value
+        val lastLink: String? = uploadViewModel.lastImageUploadedInfo.value
         if (!lastLink.isNullOrEmpty() && lastLink.startsWith("http")) {
             Utils.putStringInClipboard(this, lastLink)
             Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()

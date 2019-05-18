@@ -7,11 +7,11 @@
 
         <variable
             name="viewmodel"
-            type="com.franckrj.noelupload.MainViewModel" />
+            type="com.franckrj.noelupload.UploadViewModel" />
 
         <variable
             name="activity"
-            type="com.franckrj.noelupload.MainActivity" />
+            type="com.franckrj.noelupload.UploadActivity" />
 
     </data>
 
