@@ -11,11 +11,11 @@ import androidx.appcompat.widget.Toolbar
 abstract class AbsToolbarActivity : AppCompatActivity() {
     private var homeIsBack: Boolean = false
 
-    protected fun initToolbar(toolbar: Toolbar, newHomeIsBack: Boolean = true, displayHome: Boolean = true) {
+    protected fun initToolbar(toolbar: Toolbar, homeIsBack: Boolean = true, displayHome: Boolean = true) {
         val myActionBar: ActionBar?
 
         setSupportActionBar(toolbar)
-        homeIsBack = newHomeIsBack
+        this.homeIsBack = homeIsBack
 
         myActionBar = supportActionBar
         if (myActionBar != null) {

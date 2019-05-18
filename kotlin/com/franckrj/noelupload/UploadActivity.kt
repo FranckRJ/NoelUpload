@@ -11,6 +11,9 @@ import androidx.lifecycle.ViewModelProviders
 import com.franckrj.noelupload.databinding.ActivityUploadBinding
 
 //todo il y avait pas une histoire avec un paramètre de constructeur pour spécifier le layout ?
+/**
+ * Activité pour upload des images.
+ */
 class UploadActivity : AbsToolbarActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
