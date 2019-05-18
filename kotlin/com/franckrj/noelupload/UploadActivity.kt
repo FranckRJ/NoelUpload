@@ -47,7 +47,7 @@ class UploadActivity : AbsToolbarActivity() {
         binding.activity = this
         binding.viewmodel = uploadViewModel
 
-        initToolbar(binding.toolbarUpload as Toolbar, false)
+        initToolbar(binding.toolbarUpload as Toolbar)
 
         if (savedInstanceState == null) {
             consumeIntent(intent)
