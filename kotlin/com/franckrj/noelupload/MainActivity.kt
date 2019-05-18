@@ -6,9 +6,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
 import com.franckrj.noelupload.databinding.ActivityMainBinding
@@ -16,19 +13,28 @@ import com.franckrj.noelupload.databinding.ActivityMainBinding
 //todo il y avait pas une histoire avec un paramètre de constructeur pour spécifier le layout ?
 class MainActivity : AppCompatActivity() {
     companion object {
-        private const val CHOOSE_IMAGE_REQUEST_CODE : Int = 38
+        private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
     }
 
-    //val dfsdf: MainViewModel by viewModels()
+    //private val mainViewModel: MainViewModel by viewModels()
     //todo check ktx pour ça
     private lateinit var mainViewModel: MainViewModel
 
-    private fun putStringInClipboard(textToCopy: String) {
-        val clipboard: ClipboardManager? = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    /**
+     * Consomme le [currIntent], s'il est du bon type initialise la nouvelle image à upload s'il est valide,
+     * sinon s'il est invalide affiche un message d'erreur.
+     */
+    private fun consumeIntent(currIntent: Intent?) {
+        if (currIntent != null) {
+            if (currIntent.action == Intent.ACTION_SEND && currIntent.hasExtra(Intent.EXTRA_STREAM)) {
+                val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
-        if (clipboard != null) {
-            val clip = ClipData.newPlainText(textToCopy, textToCopy)
-            clipboard.primaryClip = clip
+                if (newUri != null) {
+                    mainViewModel.setCurrentUri(newUri)
+                } else {
+                    Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -41,69 +47,64 @@ class MainActivity : AppCompatActivity() {
         binding.activity = this
         binding.viewmodel = mainViewModel
 
-        val tmpIntent: Intent? = intent
-        if (savedInstanceState == null && tmpIntent != null) {
-            if (tmpIntent.action == Intent.ACTION_SEND && tmpIntent.hasExtra(Intent.EXTRA_STREAM)) {
-                val newUri: Uri? = tmpIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
-
-                if (newUri != null) {
-                    mainViewModel.setCurrentUri(newUri)
-                } else {
-                    Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
-                }
-            }
+        if (savedInstanceState == null) {
+            consumeIntent(intent)
         }
 
+        /* Pour désactiver l'édition de l'EditText en le faisant buger le moins possible. */
         binding.currImageChoosedEditMain.keyListener = null
 
         mainViewModel.restoreSavedData(savedInstanceState)
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (outState != null) {
-            mainViewModel.onSaveData(outState)
-        }
+        mainViewModel.onSaveData(outState)
     }
 
+    /**
+     * Intercepte les nouveaux intent reçus et les envoit à [consumeIntent].
+     */
     override fun onNewIntent(newIntent: Intent?) {
         super.onNewIntent(newIntent)
 
-        if (newIntent != null) {
-            if (newIntent.action == Intent.ACTION_SEND && newIntent.hasExtra(Intent.EXTRA_STREAM)) {
-                val newUri: Uri? = newIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
-
-                if (newUri != null) {
-                    mainViewModel.setCurrentUri(newUri)
-                } else {
-                    Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+        consumeIntent(newIntent)
     }
 
+    /**
+     * Intercepte le retour de l'intent pour sélectionner une image et sauvegarde son résultat, ou
+     * affiche une erreur si le retour est invalide.
+     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val newUri: Uri? = data?.data
 
-        if (resultCode == Activity.RESULT_OK && newUri != null) {
-            mainViewModel.setCurrentUri(newUri)
-        } else {
-            Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+        if (requestCode == CHOOSE_IMAGE_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK && newUri != null) {
+                mainViewModel.setCurrentUri(newUri)
+            } else {
+                Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+            }
         }
 
         super.onActivityResult(requestCode, resultCode, data)
     }
 
+    /**
+     * Lance un intent permettant de sélectionner une image ou affiche une erreur si la sélection est impossible.
+     */
     fun chooseAnImage() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "image/*"
         try {
             startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
-        } catch (e : Exception) {
+        } catch (e: Exception) {
             Toast.makeText(this, R.string.file_manager_not_found, Toast.LENGTH_LONG).show()
         }
     }
 
+    /**
+     * Commence l'upload de l'image sélectionnée, affiche une erreur en cas d'erreur.
+     */
     fun startUploadCurrentImage() {
         val errorMessage: String? = mainViewModel.startUploadCurrentImage()
 
@@ -112,10 +113,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Si le lien de la dernière image uploadée est valide l'ajoute dans le presse-papier, sinon affiche une erreur.
+     */
     fun copyLastImageUploadedLinkToClipboard() {
         val lastLink: String? = mainViewModel.lastImageUploadedInfo.value
         if (!lastLink.isNullOrEmpty() && lastLink.startsWith("http")) {
-            putStringInClipboard(lastLink)
+            Utils.putStringInClipboard(this, lastLink)
             Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, R.string.invalid_link, Toast.LENGTH_SHORT).show()

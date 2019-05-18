@@ -9,10 +9,14 @@ import okio.Source
 import java.io.ByteArrayInputStream
 import java.io.IOException
 
+/**
+ * Un [RequestBody] qui prend en paramètre un [listenerForProgress] qui sera notifié de la progression
+ * de l'écriture de la requête.
+ */
 class ProgressRequestBody(
     private val contentType: MediaType?,
     private val content: ByteArray,
-    private val listener: (bytesSended: Long, totalBytesToSend: Long) -> Unit
+    private val listenerForProgress: (bytesSended: Long, totalBytesToSend: Long) -> Unit
 ) : RequestBody() {
     companion object {
         private const val SEGMENT_SIZE: Long = 2048 // okio.Segment.SIZE
@@ -26,18 +30,26 @@ class ProgressRequestBody(
         return content.size.toLong()
     }
 
+    /**
+     * Ecrit la source [content] dans [sink] et notifie [listenerForProgress] de la progression.
+     * L'écriture se fait au maximum par blocs de taille [SEGMENT_SIZE].
+     */
     @Throws(IOException::class)
     override fun writeTo(sink: BufferedSink) {
         var source: Source? = null
-        try {
-            source = Okio.source(ByteArrayInputStream(content))
-            var total: Long = 0
-            var read: Long = 0
 
-            while ({read = source.read(sink.buffer(), SEGMENT_SIZE); read }() != -1L) {
+        try {
+            var total: Long = 0
+            var read: Long
+
+            source = Okio.source(ByteArrayInputStream(content))
+
+            read = source.read(sink.buffer(), SEGMENT_SIZE)
+            while (read != -1L) {
                 total += read
                 sink.flush()
-                listener(total, contentLength())
+                listenerForProgress(total, contentLength())
+                read = source.read(sink.buffer(), SEGMENT_SIZE)
             }
         } finally {
             Util.closeQuietly(source)
