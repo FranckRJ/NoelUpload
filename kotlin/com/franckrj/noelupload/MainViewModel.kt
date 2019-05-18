@@ -1,6 +1,7 @@
 package com.franckrj.noelupload
 
 import android.app.Application
+import android.content.ContentResolver
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -39,40 +40,21 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     }
     val lastImageUploadedInfo: LiveData<String?> = _lastImageUploadedInfo
 
-    private fun noelshackToDirectLink(baseLink: String): String {
-        var link = baseLink
-        if (link.contains("noelshack.com/")) {
-            link = link.substring(link.indexOf("noelshack.com/") + 14)
-        } else {
-            return link
-        }
-
-        link = if (link.startsWith("fichiers/") || link.startsWith("fichiers-xs/") || link.startsWith("minis/")) {
-            link.substring(link.indexOf("/") + 1)
-        } else {
-            link.replaceFirst("-", "/").replaceFirst("-", "/")
-        }
-
-        //moyen dégueulasse pour checker si le lien utilise le nouveau format (deux nombres entre l'année et le timestamp au lieu d'un)
-        if (link.contains("/")) {
-            var checkForNewStringType = link.substring(link.lastIndexOf("/") + 1)
-
-            if (checkForNewStringType.contains("-")) {
-                checkForNewStringType = checkForNewStringType.substring(0, checkForNewStringType.indexOf("-"))
-
-                if (checkForNewStringType.matches("[0-9]{1,8}".toRegex())) {
-                    link = link.replaceFirst("-", "/")
-                }
-            }
-        }
-
-        return "http://image.noelshack.com/fichiers/$link"
-    }
-
+    /**
+     * Retourne le nom du fichier pointé par [uri] via le [ContentResolver]. S'il n'est pas trouvé retourne
+     * simplement la dernière partie de [uri].
+     */
     private fun getFileName(uri: Uri): String {
         var result: String? = null
+
         if (uri.scheme == "content") {
-            val queryCursor: Cursor? = app.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            val queryCursor: Cursor? = app.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME),
+                null,
+                null,
+                null
+            )
             result = queryCursor?.use { cursor: Cursor ->
                 if (cursor.moveToFirst()) {
                     cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
@@ -81,6 +63,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
                 }
             }
         }
+
         if (result == null) {
             result = uri.path
             if (result != null) {
@@ -92,21 +75,36 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
                 result = uri.toString()
             }
         }
+
         return result
     }
 
-    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) {
-        viewModelScope.launch {
-            withContext(Dispatchers.Main) {
-                _lastImageUploadedInfo.value = app.getString(R.string.uploadProgress, ((bytesSended * 100) / totalBytesToSend).toString())
-            }
+    /**
+     * Callback appelé lorsque la progression de l'upload a changé, change le message d'information de l'upload par
+     * le pourcentage de progression de la requête. La fonction executera toujours les modifications de l'UI
+     * dans le main thread.
+     */
+    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) = viewModelScope.launch {
+        withContext(Dispatchers.Main) {
+            _lastImageUploadedInfo.value = app.getString(
+                R.string.uploadProgress,
+                ((bytesSended * 100) / totalBytesToSend).toString()
+            )
         }
     }
 
+    /**
+     * Upload l'image passée en paramètre sur noelshack et retourne la réponse du serveur ou une erreur.
+     * La fonction doit être appelée dans un background thread.
+     */
     private fun uploadImage(fileContent: ByteArray, fileName: String, fileType: String): String {
         try {
             val mediaTypeForFile = MediaType.parse(fileType)
-            val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("fichier", fileName, ProgressRequestBody(mediaTypeForFile, fileContent, ::uploadProgressChanged)).build()
+            val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
+                "fichier",
+                fileName,
+                ProgressRequestBody(mediaTypeForFile, fileContent, ::uploadProgressChanged)
+            ).build()
             val request = Request.Builder()
                 .url("http://www.noelshack.com/api.php")
                 .post(req)
@@ -122,18 +120,25 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             return if (responseString.isNullOrEmpty()) {
                 app.getString(R.string.errorMessage, null.toString())
             } else {
-                noelshackToDirectLink(responseString)
+                Utils.noelshackToDirectLink(responseString)
             }
         } catch (e: Exception) {
             return app.getString(R.string.errorMessage, e.toString())
         }
     }
 
+    /**
+     * Set certaines informations après qu'un upload ai terminé. La fonction executera toujours les modifications
+     * de l'UI dans le main thread.
+     */
     private suspend fun uploadOfAnImageEnded(newUploadImageInfo: String) = withContext(Dispatchers.Main) {
         _lastImageUploadedInfo.value = newUploadImageInfo
         _isInUpload = false
     }
 
+    /**
+     * Restaure la sauvegarde du [savedInstanceState] si nécessaire.
+     */
     fun restoreSavedData(savedInstanceState: Bundle?) {
         if (savedInstanceState != null && _firstTimeRestoreIsCalled) {
             _currImageChoosedUri.value = savedInstanceState.getParcelable(SAVE_LAST_IMAGE_CHOOSED_URI) as? Uri
@@ -142,16 +147,25 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         _firstTimeRestoreIsCalled = false
     }
 
+    /**
+     * Sauvegarde les informations necessaires sur le [MainViewModel] dans le [outState].
+     */
     fun onSaveData(outState: Bundle) {
         outState.putParcelable(SAVE_LAST_IMAGE_CHOOSED_URI, _currImageChoosedUri.value)
         outState.putString(SAVE_LAST_IMAGE_UPLOADED_INFO, _lastImageUploadedInfo.value)
     }
 
+    /**
+     * Set l'uri vers le fichier actuellement sélectionné.
+     */
     fun setCurrentUri(newUri: Uri) {
         _currImageChoosedUri.value = newUri
         _lastImageUploadedInfo.value = ""
     }
 
+    /**
+     * Commence à upload l'image sélectionnée, retourne null en cas de succès et un message d'erreur en cas d'erreur.
+     */
     fun startUploadCurrentImage(): String? {
         val uri: Uri? = _currImageChoosedUri.value
 

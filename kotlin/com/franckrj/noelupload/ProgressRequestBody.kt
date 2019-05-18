@@ -16,7 +16,7 @@ import java.io.IOException
 class ProgressRequestBody(
     private val contentType: MediaType?,
     private val content: ByteArray,
-    private val listenerForProgress: (bytesSended: Long, totalBytesToSend: Long) -> Unit
+    private val listenerForProgress: (bytesSended: Long, totalBytesToSend: Long) -> Any?
 ) : RequestBody() {
     companion object {
         private const val SEGMENT_SIZE: Long = 2048 // okio.Segment.SIZE
