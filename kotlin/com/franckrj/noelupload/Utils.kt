@@ -22,7 +22,7 @@ object Utils {
      * Converti n'importe quel lien vers une image noelshack en lien direct.
      */
     fun noelshackToDirectLink(baseLink: String): String {
-        var link = baseLink
+        var link: String = baseLink
 
         if (link.contains("noelshack.com/")) {
             link = link.substring(link.indexOf("noelshack.com/") + 14)
@@ -79,5 +79,19 @@ object Utils {
         } else {
             false
         }
+    }
+
+    /**
+     * Converti n'importe quel lien vers une image noelshack en lien vers sa preview.
+     */
+    fun noelshackLinkToPreviewLink(baseLink: String): String {
+        var link: String = noelshackToDirectLink(baseLink)
+
+        link = link.replaceFirst("/fichiers/", "/minis/")
+        if (link.contains(".")) {
+            link = link.substring(0, link.lastIndexOf(".")) + ".png"
+        }
+
+        return link
     }
 }

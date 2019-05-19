@@ -97,10 +97,10 @@
             android:minLines="3"
             android:padding="4dp"
             android:text='@{viewmodel.lastImageUploadedInfo ?? ""}'
-            app:layout_constraintBottom_toTopOf="@id/copy_last_image_uploaded_link_button_upload"
-            app:layout_constraintEnd_toStartOf="@id/lastpart_guideline_upload"
+            app:layout_constraintBottom_toTopOf="@+id/copy_last_image_uploaded_link_button_upload"
+            app:layout_constraintEnd_toStartOf="@+id/lastpart_guideline_upload"
             app:layout_constraintStart_toEndOf="@+id/firstpart_guideline_upload"
-            app:layout_constraintTop_toBottomOf="@id/upload_button_upload" />
+            app:layout_constraintTop_toBottomOf="@+id/upload_button_upload" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/copy_last_image_uploaded_link_button_upload"
