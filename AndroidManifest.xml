@@ -18,23 +18,24 @@
         tools:targetApi="28">
 
         <activity
-            android:name=".HistoryActivity"
-            android:launchMode="singleInstance">
+            android:name=".MainActivity"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".UploadActivity"
-            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".HistoryActivity" />
+
+        <activity
+            android:name=".UploadActivity"
+            android:launchMode="singleTop" />
 
     </application>
 
