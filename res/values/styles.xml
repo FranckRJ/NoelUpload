@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="colorSecondary">@color/colorAccent</item>
-        <item name="colorOnSecondary">@android:color/white</item>
-        <item name="android:windowBackground">@color/windowBackgroundColor</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorOnSecondary">@color/colorOnSecondary</item>
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="android:windowBackground">@color/colorSurface</item>
+    </style>
+
+    <style name="SecondaryColorButton" parent="Widget.MaterialComponents.Button">
+        <item name="colorPrimary">@color/colorSecondary</item>
+        <item name="colorOnPrimary">@color/colorOnSecondary</item>
     </style>
 </resources>

@@ -7,4 +7,4 @@
     android:elevation="4dp"
     android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
     app:layout_constraintTop_toTopOf="parent"
-    app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+    app:popupTheme="@style/ThemeOverlay.MaterialComponents" />

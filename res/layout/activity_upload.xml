@@ -41,13 +41,14 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.90" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/choose_image_button_upload"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:labelFor="@+id/curr_image_choosed_edit_upload"
             android:onClick='@{() -> activity.chooseAnImage()}'
             android:text="@string/chooseAnImage"
+            android:theme="@style/SecondaryColorButton"
             app:layout_constraintBottom_toTopOf="@+id/upload_button_upload"
             app:layout_constraintEnd_toStartOf="@+id/half_guideline_upload"
             app:layout_constraintStart_toStartOf="parent"
@@ -75,12 +76,13 @@
             <requestFocus />
         </EditText>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/upload_button_upload"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick='@{() -> activity.startUploadCurrentImage()}'
             android:text="@string/upload"
+            android:theme="@style/SecondaryColorButton"
             app:layout_constraintBottom_toTopOf="@+id/info_of_last_image_uploaded_text_upload"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -100,12 +102,13 @@
             app:layout_constraintStart_toEndOf="@+id/firstpart_guideline_upload"
             app:layout_constraintTop_toBottomOf="@id/upload_button_upload" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/copy_last_image_uploaded_link_button_upload"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick='@{() -> activity.copyLastImageUploadedLinkToClipboard()}'
             android:text="@string/copyLink"
+            android:theme="@style/SecondaryColorButton"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
