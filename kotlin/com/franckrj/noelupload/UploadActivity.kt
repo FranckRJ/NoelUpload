@@ -21,7 +21,7 @@ class UploadActivity : AbsToolbarActivity() {
 
     //private val uploadViewModel: UploadViewModel by viewModels()
     //todo check ktx pour ça
-    private lateinit var uploadViewModel: UploadViewModel
+    private lateinit var _uploadViewModel: UploadViewModel
 
     /**
      * Consomme le [currIntent], s'il est du bon type initialise la nouvelle image à upload s'il est valide,
@@ -33,7 +33,7 @@ class UploadActivity : AbsToolbarActivity() {
                 val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
                 if (newUri != null) {
-                    uploadViewModel.setCurrentUri(newUri)
+                    _uploadViewModel.setCurrentUri(newUri)
                 } else {
                     Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
                 }
@@ -45,10 +45,10 @@ class UploadActivity : AbsToolbarActivity() {
         super.onCreate(savedInstanceState)
 
         val binding: ActivityUploadBinding = DataBindingUtil.setContentView(this, R.layout.activity_upload)
-        uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
+        _uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
-        binding.viewmodel = uploadViewModel
+        binding.viewmodel = _uploadViewModel
 
         initToolbar(binding.toolbarUpload as Toolbar)
 
@@ -59,12 +59,12 @@ class UploadActivity : AbsToolbarActivity() {
         /* Pour désactiver l'édition de l'EditText en le faisant buger le moins possible. */
         binding.currImageChoosedEditUpload.keyListener = null
 
-        uploadViewModel.restoreSavedData(savedInstanceState)
+        _uploadViewModel.restoreSavedData(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        uploadViewModel.onSaveData(outState)
+        _uploadViewModel.onSaveData(outState)
     }
 
     /**
@@ -85,7 +85,7 @@ class UploadActivity : AbsToolbarActivity() {
 
         if (requestCode == CHOOSE_IMAGE_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK && newUri != null) {
-                uploadViewModel.setCurrentUri(newUri)
+                _uploadViewModel.setCurrentUri(newUri)
             } else {
                 Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
             }
@@ -111,7 +111,7 @@ class UploadActivity : AbsToolbarActivity() {
      * Commence l'upload de l'image sélectionnée, affiche une erreur en cas d'erreur.
      */
     fun startUploadCurrentImage() {
-        val errorMessage: String? = uploadViewModel.startUploadCurrentImage()
+        val errorMessage: String? = _uploadViewModel.startUploadCurrentImage()
 
         if (errorMessage != null) {
             Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
@@ -122,7 +122,7 @@ class UploadActivity : AbsToolbarActivity() {
      * Si le lien de la dernière image uploadée est valide l'ajoute dans le presse-papier, sinon affiche une erreur.
      */
     fun copyLastImageUploadedLinkToClipboard() {
-        val lastLink: String? = uploadViewModel.lastImageUploadedInfo.value
+        val lastLink: String? = _uploadViewModel.lastImageUploadedInfo.value
         if (!lastLink.isNullOrEmpty() && Utils.checkIfItsANoelshackImageLink(lastLink)) {
             Utils.putStringInClipboard(this, lastLink)
             Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
