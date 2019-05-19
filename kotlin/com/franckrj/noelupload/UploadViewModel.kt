@@ -31,6 +31,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         private const val SAVE_LAST_IMAGE_UPLOADED_INFO = "SAVE_LAST_IMAGE_UPLOADED_INFO"
     }
 
+    private val _uploadInfosDao: UploadInfosDao = AppDatabase.instance.uploadInfosDao()
+
     private var _firstTimeRestoreIsCalled: Boolean = true
     private var _isInUpload: Boolean = false
 
@@ -83,6 +85,26 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * Retourne un [ByteArrayOutputStream] avec le contenu de l'[uriToRead], ou null en cas d'erreur.
+     */
+    private suspend fun readUriContent(uriToRead: Uri): ByteArrayOutputStream? = withContext(Dispatchers.IO) {
+        try {
+            app.contentResolver.openInputStream(uriToRead)?.use { inputStream ->
+                val streamResult = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var length = inputStream.read(buffer)
+                while (length != -1) {
+                    streamResult.write(buffer, 0, length)
+                    length = inputStream.read(buffer)
+                }
+                streamResult
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Callback appelé lorsque la progression de l'upload a changé, change le message d'information de l'upload par
      * le pourcentage de progression de la requête. La fonction executera toujours les modifications de l'UI
      * dans le main thread.
@@ -123,7 +145,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             return if (responseString.isNullOrEmpty()) {
                 app.getString(R.string.errorMessage, null.toString())
             } else {
-                Utils.noelshackToDirectLink(responseString)
+                responseString
             }
         } catch (e: Exception) {
             return app.getString(R.string.errorMessage, e.toString())
@@ -134,10 +156,30 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Set certaines informations après qu'un upload ai terminé. La fonction executera toujours les modifications
      * de l'UI dans le main thread.
      */
-    private suspend fun uploadOfAnImageEnded(newUploadImageInfo: String) = withContext(Dispatchers.Main) {
-        _lastImageUploadedInfo.value = newUploadImageInfo
+    private suspend fun updateInfosAfterImageUploadEnded(newUploadImageInfo: String) = withContext(Dispatchers.Main) {
+        _lastImageUploadedInfo.value = if (Utils.checkIfItsANoelshackImageLink(newUploadImageInfo)) {
+            Utils.noelshackToDirectLink(newUploadImageInfo)
+        } else {
+            newUploadImageInfo
+        }
         _isInUpload = false
     }
+
+    /**
+     * Ajoute une entrée [UploadInfos] dans l'historique des uploads.
+     */
+    private suspend fun addUploadInfosToHistory(newUploadImageInfo: String, imageUploadedName: String) =
+        withContext(Dispatchers.IO) {
+            if (Utils.checkIfItsANoelshackImageLink(newUploadImageInfo)) {
+                _uploadInfosDao.insertUploadInfos(
+                    UploadInfos(
+                        newUploadImageInfo,
+                        imageUploadedName,
+                        System.currentTimeMillis()
+                    )
+                )
+            }
+        }
 
     /**
      * Restaure la sauvegarde du [savedInstanceState] si nécessaire.
@@ -176,35 +218,28 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         if (uri != null) {
             if (!_isInUpload) {
                 _isInUpload = true
+
                 viewModelScope.launch {
                     try {
-                        val result = withContext(Dispatchers.IO) {
-                            app.contentResolver.openInputStream(uri)?.use { inputStream ->
-                                val tmpResult = ByteArrayOutputStream()
-                                val buffer = ByteArray(8192)
-                                var length = 0
-                                while ({ length = inputStream.read(buffer); length }() != -1) {
-                                    tmpResult.write(buffer, 0, length)
-                                }
-                                tmpResult
-                            }
-                        }
+                        val fileContent = readUriContent(uri)
+                        val fileName = getFileName(uri)
 
-                        if (result != null) {
+                        if (fileContent != null) {
                             val uploadResponse: String = withContext(Dispatchers.IO) {
                                 uploadImage(
-                                    result.toByteArray(),
-                                    getFileName(uri),
+                                    fileContent.toByteArray(),
+                                    fileName,
                                     app.contentResolver.getType(uri) ?: "image/*"
                                 )
                             }
 
-                            uploadOfAnImageEnded(uploadResponse)
+                            updateInfosAfterImageUploadEnded(uploadResponse)
+                            addUploadInfosToHistory(uploadResponse, fileName)
                         } else {
-                            uploadOfAnImageEnded(app.getString(R.string.invalid_file))
+                            updateInfosAfterImageUploadEnded(app.getString(R.string.invalid_file))
                         }
                     } catch (e: Exception) {
-                        uploadOfAnImageEnded(app.getString(R.string.errorMessage, e.toString()))
+                        updateInfosAfterImageUploadEnded(app.getString(R.string.errorMessage, e.toString()))
                     }
                 }
                 return null

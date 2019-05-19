@@ -3,6 +3,7 @@ package com.franckrj.noelupload
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import java.util.*
 
 object Utils {
     /**
@@ -49,5 +50,34 @@ object Utils {
         }
 
         return "http://image.noelshack.com/fichiers/$link"
+    }
+
+    //todo le code est pompé de RespawnIRC est devrait sans doute être amélioré (comme noelshackToDirectLink ?).
+    /**
+     * Retourne true si [baseLinkToCheck] est un lien vers une image noelshack, false sinon.
+     */
+    fun checkIfItsANoelshackImageLink(baseLinkToCheck: String): Boolean {
+        var linkToCheck = baseLinkToCheck
+        var endOfLink = linkToCheck.indexOf("?")
+        if (endOfLink != -1) {
+            linkToCheck = linkToCheck.substring(0, endOfLink)
+        }
+
+        endOfLink = linkToCheck.indexOf("#")
+        if (endOfLink != -1) {
+            linkToCheck = linkToCheck.substring(0, endOfLink)
+        }
+
+        linkToCheck = linkToCheck.toLowerCase(Locale.US)
+        return if (!linkToCheck.endsWith(".php") && !linkToCheck.endsWith(".com/") && !linkToCheck.endsWith(".json")) {
+            if (linkToCheck.startsWith("http://") || linkToCheck.startsWith("https://")) {
+                linkToCheck = linkToCheck.substring(linkToCheck.indexOf("://") + 3)
+            }
+
+            linkToCheck.startsWith("image.noelshack.com/") || linkToCheck.startsWith("www.noelshack.com/") ||
+                    linkToCheck.startsWith("noelshack.com/")
+        } else {
+            false
+        }
     }
 }

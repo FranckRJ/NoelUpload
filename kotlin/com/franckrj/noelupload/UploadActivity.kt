@@ -123,7 +123,7 @@ class UploadActivity : AbsToolbarActivity() {
      */
     fun copyLastImageUploadedLinkToClipboard() {
         val lastLink: String? = uploadViewModel.lastImageUploadedInfo.value
-        if (!lastLink.isNullOrEmpty() && lastLink.startsWith("http")) {
+        if (!lastLink.isNullOrEmpty() && Utils.checkIfItsANoelshackImageLink(lastLink)) {
             Utils.putStringInClipboard(this, lastLink)
             Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
         } else {
