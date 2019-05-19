@@ -1,0 +1,15 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_upload_image_shortcut"
+        android:shortcutId="upload_image"
+        android:shortcutLongLabel="@string/upload"
+        android:shortcutShortLabel="@string/upload"
+        tools:targetApi="28">
+        <intent
+            android:action="com.franckrj.noelupload.ACTION_UPLOAD_IMAGE"
+            android:targetClass="com.franckrj.noelupload.MainActivity"
+            android:targetPackage="com.franckrj.noelupload" />
+    </shortcut>
+</shortcuts>
