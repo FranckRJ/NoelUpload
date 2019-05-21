@@ -20,6 +20,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
+import com.bumptech.glide.Glide
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
 /**
@@ -32,7 +33,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private val _uploadInfosDao: UploadInfosDao = AppDatabase.instance.uploadInfosDao()
-
+    private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
+    private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private var _firstTimeRestoreIsCalled: Boolean = true
     private var _isInUpload: Boolean = false
 
@@ -166,18 +168,31 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Ajoute une entrée [UploadInfos] dans l'historique des uploads.
+     * Ajoute une entrée [UploadInfos] dans l'historique des uploads et créé une preview pour l'affichage de l'historique.
      */
-    private suspend fun addUploadInfosToHistory(newUploadImageInfo: String, imageUploadedName: String) =
+    private suspend fun addUploadInfosToHistoryAndBuildPreview(
+        newUploadImageInfo: String,
+        imageUploadedName: String,
+        imageUploadUri: Uri
+    ) =
         withContext(Dispatchers.IO) {
             if (Utils.checkIfItsANoelshackImageLink(newUploadImageInfo)) {
-                _uploadInfosDao.insertUploadInfos(
-                    UploadInfos(
-                        newUploadImageInfo,
-                        imageUploadedName,
-                        System.currentTimeMillis()
-                    )
+                val currUploadInfos = UploadInfos(
+                    newUploadImageInfo,
+                    imageUploadedName,
+                    System.currentTimeMillis()
                 )
+                _uploadInfosDao.insertUploadInfos(currUploadInfos)
+                Glide.with(app)
+                    .asBitmap()
+                    .load(imageUploadUri)
+                    .into(
+                        SaveToFileTarget(
+                            "${app.filesDir.path}/${currUploadInfos.uploadTimeInMs}-${currUploadInfos.imageName}",
+                            _maxPreviewWidth,
+                            _maxPreviewHeight
+                        )
+                    )
             }
         }
 
@@ -234,7 +249,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                             }
 
                             updateInfosAfterImageUploadEnded(uploadResponse)
-                            addUploadInfosToHistory(uploadResponse, fileName)
+                            addUploadInfosToHistoryAndBuildPreview(uploadResponse, fileName, uri)
                         } else {
                             updateInfosAfterImageUploadEnded(app.getString(R.string.invalid_file))
                         }

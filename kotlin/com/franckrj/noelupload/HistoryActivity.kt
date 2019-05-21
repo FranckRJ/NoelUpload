@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.franckrj.noelupload.databinding.ActivityHistoryBinding
 
@@ -19,8 +20,8 @@ class HistoryActivity : AbsToolbarActivity() {
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
      * le presse-papier ou affiche une erreur.
      */
-    private fun itemInHistoryListClicked(uploadInfos: UploadInfos) {
-        val linkOfImage: String = Utils.noelshackToDirectLink(uploadInfos.imageBaseLink)
+    private fun itemInHistoryListClicked(historyEntryInfos: HistoryEntryInfos) {
+        val linkOfImage: String = Utils.noelshackToDirectLink(historyEntryInfos.uploadInfos.imageBaseLink)
 
         if (Utils.checkIfItsANoelshackImageLink(linkOfImage)) {
             Utils.putStringInClipboard(this, linkOfImage)
@@ -33,6 +34,7 @@ class HistoryActivity : AbsToolbarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val historyViewModel: HistoryViewModel = ViewModelProviders.of(this).get(HistoryViewModel::class.java)
         val binding: ActivityHistoryBinding = DataBindingUtil.setContentView(this, R.layout.activity_history)
         binding.lifecycleOwner = this
         binding.activity = this
@@ -44,10 +46,11 @@ class HistoryActivity : AbsToolbarActivity() {
         binding.uploadhistoryListHistory.layoutManager = LinearLayoutManager(this)
         binding.uploadhistoryListHistory.adapter = adapterForHistory
 
-        AppDatabase.instance.uploadInfosDao().getAllUploadInfos()
-            .observe(this, Observer { newListOfUploadInfos: List<UploadInfos>? ->
-                if (newListOfUploadInfos != null) {
-                    adapterForHistory.listOfUploadInfos = newListOfUploadInfos
+        historyViewModel.listOfHistoryEntries.observe(
+            this,
+            Observer { newListOfHistoryEntries: List<HistoryEntryInfos>? ->
+                if (newListOfHistoryEntries != null) {
+                    adapterForHistory.listOfHistoryEntries = newListOfHistoryEntries
                     adapterForHistory.notifyDataSetChanged()
                     if (adapterForHistory.itemCount > 0) {
                         binding.uploadhistoryListHistory.scrollToPosition(adapterForHistory.itemCount - 1)

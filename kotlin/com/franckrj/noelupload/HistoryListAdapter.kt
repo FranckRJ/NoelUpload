@@ -12,16 +12,16 @@ import com.bumptech.glide.Glide
  * Adapater pour l'historique des informations des uploads.
  */
 class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHolder>() {
-    var listOfUploadInfos: List<UploadInfos> = listOf()
-    var itemClickedCallback: ((UploadInfos) -> Any?)? = null
+    var listOfHistoryEntries: List<HistoryEntryInfos> = listOf()
+    var itemClickedCallback: ((HistoryEntryInfos) -> Any?)? = null
 
     /**
      * Fonction callback appelée quand un item de la liste est cliqué. Elle appelle la fonction [itemClickedCallback]
-     * avec l'[UploadInfos] qui a été cliqué.
+     * avec l'[HistoryEntryInfos] qui a été cliqué.
      */
     private fun itemInListClicked(position: Int) {
-        if (position >= 0 && position < listOfUploadInfos.size) {
-            itemClickedCallback?.invoke(listOfUploadInfos[position])
+        if (position >= 0 && position < listOfHistoryEntries.size) {
+            itemClickedCallback?.invoke(listOfHistoryEntries[position])
         }
     }
 
@@ -31,16 +31,16 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
             ::itemInListClicked
         )
 
-    override fun getItemCount(): Int = listOfUploadInfos.size
+    override fun getItemCount(): Int = listOfHistoryEntries.size
 
     override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
-        if (position >= 0 && position < listOfUploadInfos.size) {
-            holder.bindView(listOfUploadInfos[position], position)
+        if (position >= 0 && position < listOfHistoryEntries.size) {
+            holder.bindView(listOfHistoryEntries[position], position)
         }
     }
 
     /**
-     * ViewHolder pour un [UploadInfos].
+     * ViewHolder pour un [HistoryEntryInfos].
      */
     class HistoryViewHolder(private val mainView: View, private val clickCallback: (Int) -> Any?) :
         RecyclerView.ViewHolder(mainView) {
@@ -53,12 +53,17 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
 
         /**
          * Bind le ViewHolder à l'item passé en paramètre.
+         * L'image de preview sera chargée si le fichier est différent de null, sinon la miniature noelshack sera utilisée.
+         * L'image de preview vaut null si le fichier n'existe pas.
          */
-        fun bindView(uploadInfos: UploadInfos, position: Int) {
-            Glide.with(mainView.context).load(Utils.noelshackLinkToPreviewLink(uploadInfos.imageBaseLink))
+        fun bindView(historyEntryInfos: HistoryEntryInfos, position: Int) {
+            Glide.with(mainView.context)
+                .load(historyEntryInfos.fileForPreview ?: historyEntryInfos.fallbackPreviewUrl)
                 .placeholder(R.drawable.ic_file_download_white_24dp)
-                .error(R.drawable.ic_file_download_failed_white_24dp).centerCrop().into(_imagePreview)
-            _imageName.text = uploadInfos.imageName
+                .error(R.drawable.ic_file_download_failed_white_24dp)
+                .centerCrop()
+                .into(_imagePreview)
+            _imageName.text = historyEntryInfos.uploadInfos.imageName
             mainView.tag = position
         }
     }

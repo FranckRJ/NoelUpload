@@ -14,9 +14,11 @@ import androidx.room.Query
  * Le [imageBaseLink] est lien vers l'image avec l'overlay du site web.
  */
 @Entity
-data class UploadInfos(@PrimaryKey val imageBaseLink: String,
-                       val imageName: String,
-                       val uploadTimeInMs: Long)
+data class UploadInfos(
+    @PrimaryKey val imageBaseLink: String,
+    val imageName: String,
+    val uploadTimeInMs: Long
+)
 
 /**
  * DAO pour accéder aux informations sur les uploads.
