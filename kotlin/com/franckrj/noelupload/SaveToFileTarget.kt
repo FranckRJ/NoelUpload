@@ -22,11 +22,11 @@ class SaveToFileTarget(private val filePath: String, private val maxWidth: Int, 
         var newHeight: Double = bitmapToScale.height.toDouble()
 
         if (newWidth > maxWidth) {
-            newHeight /= newWidth / (newWidth - maxWidth)
+            newHeight /= (newWidth / maxWidth)
             newWidth = maxWidth.toDouble()
         }
         if (newHeight > maxHeight) {
-            newWidth /= newHeight / (newHeight - maxHeight)
+            newWidth /= (newHeight / maxHeight)
             newHeight = maxHeight.toDouble()
         }
 
