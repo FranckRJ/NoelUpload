@@ -234,19 +234,17 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             if (!_isInUpload) {
                 _isInUpload = true
 
-                viewModelScope.launch {
+                viewModelScope.launch(Dispatchers.IO) {
                     try {
                         val fileContent = readUriContent(uri)
                         val fileName = getFileName(uri)
 
                         if (fileContent != null) {
-                            val uploadResponse: String = withContext(Dispatchers.IO) {
-                                uploadImage(
-                                    fileContent.toByteArray(),
-                                    fileName,
-                                    app.contentResolver.getType(uri) ?: "image/*"
-                                )
-                            }
+                            val uploadResponse: String = uploadImage(
+                                fileContent.toByteArray(),
+                                fileName,
+                                app.contentResolver.getType(uri) ?: "image/*"
+                            )
 
                             updateInfosAfterImageUploadEnded(uploadResponse)
                             addUploadInfosToHistoryAndBuildPreview(uploadResponse, fileName, uri)
