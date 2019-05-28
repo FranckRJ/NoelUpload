@@ -1,4 +1,4 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.upload
 
 import okhttp3.MediaType
 import okio.Okio

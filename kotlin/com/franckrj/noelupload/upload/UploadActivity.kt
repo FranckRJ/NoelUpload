@@ -1,4 +1,4 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.upload
 
 import android.app.Activity
 import android.os.Bundle
@@ -8,6 +8,9 @@ import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
+import com.franckrj.noelupload.AbsToolbarActivity
+import com.franckrj.noelupload.R
+import com.franckrj.noelupload.Utils
 import com.franckrj.noelupload.databinding.ActivityUploadBinding
 
 //todo il y avait pas une histoire avec un paramètre de constructeur pour spécifier le layout ?

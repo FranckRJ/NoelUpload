@@ -6,7 +6,7 @@
 
         <variable
             name="activity"
-            type="com.franckrj.noelupload.HistoryActivity" />
+            type="com.franckrj.noelupload.history.HistoryActivity" />
 
     </data>
 

@@ -37,10 +37,10 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <activity android:name=".HistoryActivity" />
+        <activity android:name=".history.HistoryActivity" />
 
         <activity
-            android:name=".UploadActivity"
+            android:name=".upload.UploadActivity"
             android:launchMode="singleTop" />
 
     </application>

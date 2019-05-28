@@ -1,4 +1,4 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.upload
 
 import android.graphics.drawable.Drawable
 import com.bumptech.glide.request.target.CustomTarget

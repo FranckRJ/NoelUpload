@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.franckrj.noelupload.history.HistoryActivity
+import com.franckrj.noelupload.upload.UploadActivity
 
 /**
  * Activité ayant pour but de lancer les bonnes activités au démarrage.

@@ -1,5 +1,6 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.history
 
+import com.franckrj.noelupload.upload.UploadInfos
 import java.io.File
 
 /**

@@ -1,4 +1,4 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.history
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +8,10 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.franckrj.noelupload.AbsToolbarActivity
+import com.franckrj.noelupload.R
+import com.franckrj.noelupload.upload.UploadActivity
+import com.franckrj.noelupload.Utils
 import com.franckrj.noelupload.databinding.ActivityHistoryBinding
 
 /**

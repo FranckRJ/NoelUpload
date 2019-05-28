@@ -1,4 +1,4 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.upload
 
 import android.app.Application
 import android.content.ContentResolver
@@ -21,6 +21,9 @@ import okhttp3.Request
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 import com.bumptech.glide.Glide
+import com.franckrj.noelupload.AppDatabase
+import com.franckrj.noelupload.R
+import com.franckrj.noelupload.Utils
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
 /**

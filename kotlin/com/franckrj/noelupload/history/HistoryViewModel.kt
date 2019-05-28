@@ -1,9 +1,13 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.history
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
+import com.franckrj.noelupload.AppDatabase
+import com.franckrj.noelupload.upload.UploadInfos
+import com.franckrj.noelupload.upload.UploadInfosDao
+import com.franckrj.noelupload.Utils
 import java.io.File
 
 /**
