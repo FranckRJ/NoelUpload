@@ -2,33 +2,40 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="8dp"
-    android:layout_marginTop="8dp"
-    android:layout_marginEnd="8dp"
+    android:layout_gravity="center"
+    android:layout_margin="8dp"
     app:cardCornerRadius="4dp">
 
-    <LinearLayout
+    <com.franckrj.noelupload.SquareRelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal"
-        tools:ignore="UseCompoundDrawables">
+        android:layout_height="match_parent">
 
         <ImageView
             android:id="@+id/imagepreview_image_history_row"
-            android:layout_width="136dp"
-            android:layout_height="102dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:contentDescription="@string/imagePreview" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="22sp"
+            android:layout_alignParentBottom="true"
+            android:background="@color/colorTransparentBackground" />
 
         <TextView
             android:id="@+id/imagename_text_history_row"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:ellipsize="end"
+            android:lines="1"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textSize="16sp"
+            tools:ignore="RelativeOverlap" />
 
-    </LinearLayout>
+    </com.franckrj.noelupload.SquareRelativeLayout>
 
 </com.google.android.material.card.MaterialCardView>

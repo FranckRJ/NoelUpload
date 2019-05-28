@@ -19,12 +19,15 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:clipToPadding="false"
+            android:paddingStart="8dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="8dp"
             android:paddingBottom="88dp"
             android:scrollbarStyle="outsideOverlay"
             android:scrollbars="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/toolbar_history" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -33,9 +36,11 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:onClick="@{() -> activity.goToUploadActivity()}"
-            android:src="@drawable/ic_file_upload_white_24dp"
+            android:src="@drawable/ic_pick_image_white_36dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:maxImageSize="36dp" />
 
         <include
             android:id="@+id/toolbar_history"

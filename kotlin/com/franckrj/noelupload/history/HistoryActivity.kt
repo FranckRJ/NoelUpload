@@ -7,6 +7,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.franckrj.noelupload.AbsToolbarActivity
 import com.franckrj.noelupload.R
@@ -47,7 +48,7 @@ class HistoryActivity : AbsToolbarActivity() {
 
         adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
 
-        binding.uploadhistoryListHistory.layoutManager = LinearLayoutManager(this)
+        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 2)
         binding.uploadhistoryListHistory.adapter = adapterForHistory
 
         historyViewModel.listOfHistoryEntries.observe(
