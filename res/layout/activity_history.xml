@@ -31,11 +31,11 @@
             app:layout_constraintTop_toBottomOf="@+id/toolbar_history" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/upload_fab_history"
+            android:id="@+id/pick_image_fab_history"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:onClick="@{() -> activity.goToUploadActivity()}"
+            android:onClick="@{() -> activity.pickAnImage()}"
             android:src="@drawable/ic_pick_image_white_36dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

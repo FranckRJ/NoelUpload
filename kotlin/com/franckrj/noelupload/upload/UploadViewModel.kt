@@ -9,7 +9,6 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,24 +30,21 @@ import com.franckrj.noelupload.Utils
  */
 class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     companion object {
-        private const val SAVE_LAST_IMAGE_CHOOSED_URI = "SAVE_LAST_IMAGE_CHOOSED_URI"
-        private const val SAVE_LAST_IMAGE_UPLOADED_INFO = "SAVE_LAST_IMAGE_UPLOADED_INFO"
+        private const val SAVE_UPLOAD_INFOS = "SAVE_UPLOAD_INFOS"
+        private const val SAVE_UPLOAD_STATUS_INFOS = "SAVE_UPLOAD_STATUS_INFOS"
     }
 
     private val _uploadInfosDao: UploadInfosDao = AppDatabase.instance.uploadInfosDao()
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private var _firstTimeRestoreIsCalled: Boolean = true
-    private var _isInUpload: Boolean = false
 
-    private val _currImageChoosedUri: MutableLiveData<Uri?> = MutableLiveData()
-    private val _lastImageUploadedInfo: MutableLiveData<String?> = MutableLiveData()
+    private val _currUploadInfos: MutableLiveData<UploadInfos?> = MutableLiveData()
+    private val _currUploadStatusInfos: MutableLiveData<UploadStatusInfos?> =
+        MutableLiveData(UploadStatusInfos(UploadStatus.FINISHED))
 
-    val currImageChoosedUri: LiveData<Uri?> = _currImageChoosedUri
-    val currImageChoosedName: LiveData<String?> = currImageChoosedUri.map {
-        getFileName(it ?: Uri.EMPTY)
-    }
-    val lastImageUploadedInfo: LiveData<String?> = _lastImageUploadedInfo
+    val currUploadInfos: LiveData<UploadInfos?> = _currUploadInfos
+    val currUploadStatusInfos: LiveData<UploadStatusInfos?> = _currUploadStatusInfos
 
     /**
      * Retourne le nom du fichier pointé par [uri] via le [ContentResolver]. S'il n'est pas trouvé retourne
@@ -110,102 +106,81 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Callback appelé lorsque la progression de l'upload a changé, change le message d'information de l'upload par
-     * le pourcentage de progression de la requête. La fonction executera toujours les modifications de l'UI
-     * dans le main thread.
+     * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
+     * de progression de la requête.
      */
     private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) = viewModelScope.launch {
-        withContext(Dispatchers.Main) {
-            _lastImageUploadedInfo.value = app.getString(
-                R.string.uploadProgress,
+        //todo checker si ça peut pas override un postValue(FINISHED) (ou ERROR) par inadvertance.
+        _currUploadStatusInfos.postValue(
+            UploadStatusInfos(
+                UploadStatus.UPLOADING,
                 ((bytesSended * 100) / totalBytesToSend).toString()
             )
-        }
+        )
     }
 
     /**
-     * Upload l'image passée en paramètre sur noelshack et retourne la réponse du serveur ou une erreur.
+     * Upload l'image passée en paramètre sur noelshack et retourne la réponse du serveur ou throw si erreur.
      * La fonction doit être appelée dans un background thread.
      */
-    private fun uploadImage(fileContent: ByteArray, fileName: String, fileType: String): String {
-        try {
-            val mediaTypeForFile = MediaType.parse(fileType)
-            val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
-                "fichier",
-                fileName,
-                ProgressRequestBody(mediaTypeForFile, fileContent, ::uploadProgressChanged)
-            ).build()
-            val request = Request.Builder()
-                .url("http://www.noelshack.com/api.php")
-                .post(req)
-                .build()
+    @Suppress("RedundantSuspendModifier")
+    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileName: String, fileType: String): String {
+        val mediaTypeForFile = MediaType.parse(fileType)
+        val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
+            "fichier",
+            fileName,
+            ProgressRequestBody(mediaTypeForFile, fileContent, ::uploadProgressChanged)
+        ).build()
+        val request = Request.Builder()
+            .url("http://www.noelshack.com/api.php")
+            .post(req)
+            .build()
 
-            val client = OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.MINUTES)
-                .writeTimeout(10, TimeUnit.SECONDS)
-                .build()
-            val responseString: String? = client.newCall(request).execute().body()?.string()
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.MINUTES)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .build()
+        val responseString: String? = client.newCall(request).execute().body()?.string()
 
-            return if (responseString.isNullOrEmpty()) {
-                app.getString(R.string.errorMessage, null.toString())
-            } else {
-                responseString
-            }
-        } catch (e: Exception) {
-            return app.getString(R.string.errorMessage, e.toString())
-        }
-    }
-
-    /**
-     * Set certaines informations après qu'un upload ai terminé. La fonction executera toujours les modifications
-     * de l'UI dans le main thread.
-     */
-    private suspend fun updateInfosAfterImageUploadEnded(newUploadImageInfo: String) = withContext(Dispatchers.Main) {
-        _lastImageUploadedInfo.value = if (Utils.checkIfItsANoelshackImageLink(newUploadImageInfo)) {
-            Utils.noelshackToDirectLink(newUploadImageInfo)
+        if (responseString.isNullOrEmpty()) {
+            throw Exception(app.getString(R.string.errorMessage, null.toString()))
         } else {
-            newUploadImageInfo
+            return responseString
         }
-        _isInUpload = false
     }
 
     /**
-     * Ajoute une entrée [UploadInfos] dans l'historique des uploads et créé une preview pour l'affichage de l'historique.
+     * Upload l'image passée en paramètre et retourne son lien noelshack ou throw en cas d'erreur.
      */
-    private suspend fun addUploadInfosToHistoryAndBuildPreview(
-        newUploadImageInfo: String,
-        imageUploadedName: String,
-        imageUploadUri: Uri
-    ) =
-        withContext(Dispatchers.IO) {
-            if (Utils.checkIfItsANoelshackImageLink(newUploadImageInfo)) {
-                val currUploadInfos = UploadInfos(
-                    newUploadImageInfo,
-                    imageUploadedName,
-                    System.currentTimeMillis()
-                )
-                _uploadInfosDao.insertUploadInfos(currUploadInfos)
-                Glide.with(app)
-                    .asBitmap()
-                    .load(imageUploadUri)
-                    .into(
-                        SaveToFileTarget(
-                            "${app.filesDir.path}/${currUploadInfos.uploadTimeInMs}-${currUploadInfos.imageName}",
-                            _maxPreviewWidth,
-                            _maxPreviewHeight
-                        )
-                    )
+    private suspend fun uploadThisImage(imageUri: Uri, imageUploadInfos: UploadInfos): String {
+        val fileContent = readUriContent(imageUri)
+
+        return if (fileContent != null) {
+            val uploadResponse: String = uploadBitmapImage(
+                fileContent.toByteArray(),
+                imageUploadInfos.imageName,
+                app.contentResolver.getType(imageUri) ?: "image/*"
+            )
+
+            if (Utils.checkIfItsANoelshackImageLink(uploadResponse)) {
+                Utils.noelshackToDirectLink(uploadResponse)
+            } else {
+                throw Exception(uploadResponse)
             }
+        } else {
+            throw Exception(app.getString(R.string.invalid_file))
         }
+    }
 
     /**
      * Restaure la sauvegarde du [savedInstanceState] si nécessaire.
      */
     fun restoreSavedData(savedInstanceState: Bundle?) {
         if (savedInstanceState != null && _firstTimeRestoreIsCalled) {
-            _currImageChoosedUri.value = savedInstanceState.getParcelable(SAVE_LAST_IMAGE_CHOOSED_URI) as? Uri
-            _lastImageUploadedInfo.value = savedInstanceState.getString(SAVE_LAST_IMAGE_UPLOADED_INFO, null)
+            //todo gérer la sauvegarde / restauration
+            /*_currUploadInfos.value = savedInstanceState.getParcelable(SAVE_UPLOAD_INFOS) as? UploadInfos
+            _currUploadStatusInfos.value = savedInstanceState.getParcelable(SAVE_UPLOAD_STATUS_INFOS) as? UploadStatusInfos*/
         }
         _firstTimeRestoreIsCalled = false
     }
@@ -214,56 +189,69 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Sauvegarde les informations necessaires pour le [UploadViewModel] dans le [outState].
      */
     fun onSaveData(outState: Bundle) {
-        outState.putParcelable(SAVE_LAST_IMAGE_CHOOSED_URI, _currImageChoosedUri.value)
-        outState.putString(SAVE_LAST_IMAGE_UPLOADED_INFO, _lastImageUploadedInfo.value)
+        //todo gérer la sauvegarde / restauration
+        /*outState.putParcelable(SAVE_UPLOAD_INFOS, _currUploadInfos.value)
+        outState.putParcelable(SAVE_UPLOAD_STATUS_INFOS, _currUploadStatusInfos.value)*/
     }
 
     /**
-     * Set l'uri vers le fichier actuellement sélectionné.
+     * Initialise des trucs pour ajouter l'image pointée par [newImageUri] à l'historique et lance son upload.
+     * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
      */
-    fun setCurrentUri(newUri: Uri) {
-        _currImageChoosedUri.value = newUri
-        _lastImageUploadedInfo.value = ""
-    }
+    fun startUploadThisImage(newImageUri: Uri): Boolean {
+        if (_currUploadStatusInfos.value?.status == UploadStatus.FINISHED) {
+            _currUploadStatusInfos.value = (UploadStatusInfos(UploadStatus.UPLOADING, "0"))
 
-    /**
-     * Commence à upload l'image sélectionnée, retourne null en cas de succès et un message d'erreur en cas d'erreur.
-     */
-    fun startUploadCurrentImage(): String? {
-        val uri: Uri? = _currImageChoosedUri.value
+            viewModelScope.launch(Dispatchers.IO) {
+                var newUploadInfos = UploadInfos(
+                    "",
+                    getFileName(newImageUri),
+                    System.currentTimeMillis()
+                )
+                val newRowIdForUploadInfos: Long = _uploadInfosDao.insertUploadInfos(newUploadInfos)
 
-        _lastImageUploadedInfo.value = ""
-        if (uri != null) {
-            if (!_isInUpload) {
-                _isInUpload = true
+                Glide.with(app)
+                    .asBitmap()
+                    .load(newImageUri)
+                    .into(
+                        SaveToFileTarget(
+                            "${app.filesDir.path}/${newUploadInfos.uploadTimeInMs}-${newUploadInfos.imageName}",
+                            _maxPreviewWidth,
+                            _maxPreviewHeight
+                        )
+                    )
 
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val fileContent = readUriContent(uri)
-                        val fileName = getFileName(uri)
+                newUploadInfos = _uploadInfosDao.findByRowId(newRowIdForUploadInfos)!!
+                _currUploadInfos.postValue(newUploadInfos)
 
-                        if (fileContent != null) {
-                            val uploadResponse: String = uploadImage(
-                                fileContent.toByteArray(),
-                                fileName,
-                                app.contentResolver.getType(uri) ?: "image/*"
-                            )
+                try {
+                    val linkOfImage = uploadThisImage(newImageUri, newUploadInfos)
+                    newUploadInfos = UploadInfos(
+                        linkOfImage,
+                        newUploadInfos.imageName,
+                        newUploadInfos.uploadTimeInMs,
+                        newUploadInfos.id
+                    )
 
-                            updateInfosAfterImageUploadEnded(uploadResponse)
-                            addUploadInfosToHistoryAndBuildPreview(uploadResponse, fileName, uri)
-                        } else {
-                            updateInfosAfterImageUploadEnded(app.getString(R.string.invalid_file))
-                        }
-                    } catch (e: Exception) {
-                        updateInfosAfterImageUploadEnded(app.getString(R.string.errorMessage, e.toString()))
-                    }
+                    _uploadInfosDao.insertUploadInfos(newUploadInfos)
+                    _currUploadInfos.postValue(newUploadInfos)
+                    _currUploadStatusInfos.postValue(UploadStatusInfos(UploadStatus.FINISHED))
+                } catch (e: Exception) {
+                    _currUploadStatusInfos.postValue(UploadStatusInfos(UploadStatus.ERROR, e.message.orEmpty()))
                 }
-                return null
-            } else {
-                return app.getString(R.string.upload_already_running)
             }
+
+            return true
         } else {
-            return app.getString(R.string.invalid_file)
+            return false
         }
     }
+
+    enum class UploadStatus {
+        UPLOADING,
+        FINISHED,
+        ERROR
+    }
+
+    data class UploadStatusInfos(val status: UploadStatus, val message: String = "")
 }

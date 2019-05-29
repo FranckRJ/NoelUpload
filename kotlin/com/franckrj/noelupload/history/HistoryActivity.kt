@@ -1,6 +1,8 @@
 package com.franckrj.noelupload.history
 
+import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
@@ -8,18 +10,24 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.franckrj.noelupload.AbsToolbarActivity
 import com.franckrj.noelupload.R
-import com.franckrj.noelupload.upload.UploadActivity
 import com.franckrj.noelupload.Utils
 import com.franckrj.noelupload.databinding.ActivityHistoryBinding
+import com.franckrj.noelupload.upload.UploadViewModel
 
 /**
  * Activité pour consulter l'historique des uploads.
  */
 class HistoryActivity : AbsToolbarActivity() {
-    val adapterForHistory = HistoryListAdapter()
+    companion object {
+        private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
+    }
+
+    //private val uploadViewModel: UploadViewModel by viewModels()
+    //todo check ktx pour ça
+    private lateinit var _uploadViewModel: UploadViewModel
+    private val _adapterForHistory = HistoryListAdapter()
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
@@ -36,38 +44,100 @@ class HistoryActivity : AbsToolbarActivity() {
         }
     }
 
+    /**
+     * Consomme le [currIntent], s'il est du bon type initialise la nouvelle image à upload s'il est valide,
+     * sinon s'il est invalide affiche un message d'erreur.
+     */
+    private fun consumeIntent(currIntent: Intent?) {
+        if (currIntent != null) {
+            if (currIntent.action == Intent.ACTION_SEND && currIntent.hasExtra(Intent.EXTRA_STREAM)) {
+                val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+
+                if (newUri != null) {
+                    //todo afficher une erreur si un upload est déjà en cours.
+                    //todo faire une seule fonction des deux fonctions qui appellent cette fonction.
+                    _uploadViewModel.startUploadThisImage(newUri)
+                } else {
+                    Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val historyViewModel: HistoryViewModel = ViewModelProviders.of(this).get(HistoryViewModel::class.java)
         val binding: ActivityHistoryBinding = DataBindingUtil.setContentView(this, R.layout.activity_history)
+        _uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
 
         initToolbar(binding.toolbarHistory as Toolbar, homeIsBack = false, displayHome = false)
 
-        adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
+        _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
 
         binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 2)
-        binding.uploadhistoryListHistory.adapter = adapterForHistory
+        binding.uploadhistoryListHistory.adapter = _adapterForHistory
 
         historyViewModel.listOfHistoryEntries.observe(
             this,
             Observer { newListOfHistoryEntries: List<HistoryEntryInfos>? ->
                 if (newListOfHistoryEntries != null) {
-                    adapterForHistory.listOfHistoryEntries = newListOfHistoryEntries
-                    adapterForHistory.notifyDataSetChanged()
-                    if (adapterForHistory.itemCount > 0) {
-                        binding.uploadhistoryListHistory.scrollToPosition(adapterForHistory.itemCount - 1)
+                    _adapterForHistory.listOfHistoryEntries = newListOfHistoryEntries
+                    _adapterForHistory.notifyDataSetChanged()
+                    if (_adapterForHistory.itemCount > 0) {
+                        binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
                     }
                 }
             })
+
+        _uploadViewModel.restoreSavedData(savedInstanceState)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        _uploadViewModel.onSaveData(outState)
     }
 
     /**
-     * Lance l'activité pour upload des images [UploadActivity].
+     * Intercepte les nouveaux intent reçus et les envoit à [consumeIntent].
      */
-    fun goToUploadActivity() {
-        startActivity(Intent(this, UploadActivity::class.java))
+    override fun onNewIntent(newIntent: Intent?) {
+        super.onNewIntent(newIntent)
+
+        consumeIntent(newIntent)
+    }
+
+    /**
+     * Intercepte le retour de l'intent pour sélectionner une image et sauvegarde son résultat, ou
+     * affiche une erreur si le retour est invalide.
+     */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        val newUri: Uri? = data?.data
+
+        if (requestCode == CHOOSE_IMAGE_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK && newUri != null) {
+                //todo afficher une erreur si un upload est déjà en cours.
+                _uploadViewModel.startUploadThisImage(newUri)
+            } else {
+                Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    /**
+     * Lance un intent permettant de sélectionner une image ou affiche une erreur si la sélection est impossible.
+     */
+    fun pickAnImage() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "image/*"
+        try {
+            startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.file_manager_not_found, Toast.LENGTH_LONG).show()
+        }
     }
 }

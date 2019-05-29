@@ -15,9 +15,10 @@ import androidx.room.Query
  */
 @Entity
 data class UploadInfos(
-    @PrimaryKey val imageBaseLink: String,
+    val imageBaseLink: String,
     val imageName: String,
-    val uploadTimeInMs: Long
+    val uploadTimeInMs: Long,
+    @PrimaryKey(autoGenerate = true) val id: Long? = null
 )
 
 /**
@@ -29,13 +30,16 @@ interface UploadInfosDao {
     fun getAllUploadInfos(): LiveData<List<UploadInfos>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertUploadInfos(uploadInfos: UploadInfos)
+    suspend fun insertUploadInfos(uploadInfos: UploadInfos): Long
 
     @Delete
     suspend fun deleteUploadInfos(vararg uploadInfos: UploadInfos)
 
     @Query("DELETE FROM uploadinfos")
     suspend fun deleteAllUploadInfos()
+
+    @Query("SELECT * FROM uploadinfos WHERE rowid = :rowIdToSearch")
+    suspend fun findByRowId(rowIdToSearch: Long): UploadInfos?
 
     @Query("SELECT * FROM uploadinfos WHERE imagebaselink = :baseLinkToSearch")
     suspend fun findByBaseLink(baseLinkToSearch: String): UploadInfos?

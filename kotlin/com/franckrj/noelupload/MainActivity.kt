@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.franckrj.noelupload.history.HistoryActivity
-import com.franckrj.noelupload.upload.UploadActivity
 
 /**
  * Activité ayant pour but de lancer les bonnes activités au démarrage.
@@ -23,14 +22,16 @@ class MainActivity : AppCompatActivity() {
         historyIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         startActivity(historyIntent)
         if (launchIntent != null) {
-            if (launchIntent.action == Intent.ACTION_SEND && launchIntent.hasExtra(Intent.EXTRA_STREAM)) {
+            //todo MainActivity doit être l'HistoryActivity actuelle
+            //todo tous les intents et les shortcuts doivent être gérés dans l'HistoryActivity
+            /*if (launchIntent.action == Intent.ACTION_SEND && launchIntent.hasExtra(Intent.EXTRA_STREAM)) {
                 val uploadIntent = Intent(this, UploadActivity::class.java)
                 uploadIntent.action = Intent.ACTION_SEND
                 uploadIntent.putExtra(Intent.EXTRA_STREAM, launchIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri)
                 startActivity(uploadIntent)
             } else if (launchIntent.action == ACTION_UPLOAD_IMAGE) {
                 startActivity(Intent(this, UploadActivity::class.java))
-            }
+            }*/
         }
 
         finish()
