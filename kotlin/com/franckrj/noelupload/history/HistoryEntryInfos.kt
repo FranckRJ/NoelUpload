@@ -11,5 +11,6 @@ import java.io.File
 data class HistoryEntryInfos(
     val uploadInfos: UploadInfos,
     val fileForPreview: File?,
-    val fallbackPreviewUrl: String
+    val fallbackPreviewUrl: String,
+    var uploadProgression: Int = -1
 )

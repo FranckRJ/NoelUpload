@@ -210,6 +210,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 )
                 val newRowIdForUploadInfos: Long = _uploadInfosDao.insertUploadInfos(newUploadInfos)
 
+                //todo mieux gérer la non-présence de la miniature au début, un placeholder puis refresh dès qu'elle est dispo
                 Glide.with(app)
                     .asBitmap()
                     .load(newImageUri)
@@ -246,12 +247,4 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             return false
         }
     }
-
-    enum class UploadStatus {
-        UPLOADING,
-        FINISHED,
-        ERROR
-    }
-
-    data class UploadStatusInfos(val status: UploadStatus, val message: String = "")
 }

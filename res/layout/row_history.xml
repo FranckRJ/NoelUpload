@@ -36,6 +36,16 @@
             android:textSize="16sp"
             tools:ignore="RelativeOverlap" />
 
+        <ProgressBar
+            android:id="@+id/upload_progress_history_row"
+            style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:progressTint="@android:color/white"
+            android:progressBackgroundTint="@android:color/transparent"
+            android:layout_alignParentBottom="true"
+            android:indeterminate="false" />
+
     </com.franckrj.noelupload.SquareRelativeLayout>
 
 </com.google.android.material.card.MaterialCardView>

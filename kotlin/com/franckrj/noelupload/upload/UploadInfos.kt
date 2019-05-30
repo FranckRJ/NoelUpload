@@ -22,12 +22,29 @@ data class UploadInfos(
 )
 
 /**
+ * Enum représentant le statut d'un upload.
+ */
+enum class UploadStatus {
+    UPLOADING,
+    FINISHED,
+    ERROR
+}
+
+/**
+ * Data class contenant les infos sur le statut d'un upload.
+ */
+data class UploadStatusInfos(
+    val status: UploadStatus,
+    val message: String = ""
+)
+
+/**
  * DAO pour accéder aux informations sur les uploads.
  */
 @Dao
 interface UploadInfosDao {
     @Query("SELECT * FROM uploadinfos")
-    fun getAllUploadInfos(): LiveData<List<UploadInfos>>
+    fun getAllUploadInfos(): LiveData<List<UploadInfos>?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUploadInfos(uploadInfos: UploadInfos): Long

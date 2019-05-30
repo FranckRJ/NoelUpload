@@ -14,6 +14,8 @@ import com.franckrj.noelupload.AbsToolbarActivity
 import com.franckrj.noelupload.R
 import com.franckrj.noelupload.Utils
 import com.franckrj.noelupload.databinding.ActivityHistoryBinding
+import com.franckrj.noelupload.upload.UploadInfos
+import com.franckrj.noelupload.upload.UploadStatusInfos
 import com.franckrj.noelupload.upload.UploadViewModel
 
 /**
@@ -26,8 +28,10 @@ class HistoryActivity : AbsToolbarActivity() {
 
     //private val uploadViewModel: UploadViewModel by viewModels()
     //todo check ktx pour ça
+    private lateinit var _historyViewModel: HistoryViewModel
     private lateinit var _uploadViewModel: UploadViewModel
     private val _adapterForHistory = HistoryListAdapter()
+    private var _currHistoryEntryIndexInList: Int = -1
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
@@ -45,6 +49,19 @@ class HistoryActivity : AbsToolbarActivity() {
     }
 
     /**
+     * Lance l'upload de [uri] ou affiche un message d'erreur.
+     */
+    private fun startUploadThisImage(uri: Uri?) {
+        if (uri != null) {
+            if (!_uploadViewModel.startUploadThisImage(uri)) {
+                Toast.makeText(this, R.string.upload_already_running, Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
      * Consomme le [currIntent], s'il est du bon type initialise la nouvelle image à upload s'il est valide,
      * sinon s'il est invalide affiche un message d'erreur.
      */
@@ -53,13 +70,7 @@ class HistoryActivity : AbsToolbarActivity() {
             if (currIntent.action == Intent.ACTION_SEND && currIntent.hasExtra(Intent.EXTRA_STREAM)) {
                 val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
-                if (newUri != null) {
-                    //todo afficher une erreur si un upload est déjà en cours.
-                    //todo faire une seule fonction des deux fonctions qui appellent cette fonction.
-                    _uploadViewModel.startUploadThisImage(newUri)
-                } else {
-                    Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
-                }
+                startUploadThisImage(newUri)
             }
         }
     }
@@ -67,8 +78,8 @@ class HistoryActivity : AbsToolbarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val historyViewModel: HistoryViewModel = ViewModelProviders.of(this).get(HistoryViewModel::class.java)
         val binding: ActivityHistoryBinding = DataBindingUtil.setContentView(this, R.layout.activity_history)
+        _historyViewModel = ViewModelProviders.of(this).get(HistoryViewModel::class.java)
         _uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
@@ -80,7 +91,7 @@ class HistoryActivity : AbsToolbarActivity() {
         binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 2)
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
 
-        historyViewModel.listOfHistoryEntries.observe(
+        _historyViewModel.liveListOfHistoryEntries.observe(
             this,
             Observer { newListOfHistoryEntries: List<HistoryEntryInfos>? ->
                 if (newListOfHistoryEntries != null) {
@@ -90,7 +101,35 @@ class HistoryActivity : AbsToolbarActivity() {
                         binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
                     }
                 }
+                _currHistoryEntryIndexInList =
+                    _adapterForHistory.findItemIndexByUploadId(_uploadViewModel.currUploadInfos.value?.id)
             })
+
+        _historyViewModel.currHistoryEntryHasBeenChanged.observe(
+            this,
+            Observer {
+                val currentItemIndex: Int = _currHistoryEntryIndexInList
+
+                if (currentItemIndex >= 0 && currentItemIndex < _adapterForHistory.itemCount) {
+                    _adapterForHistory.notifyItemChanged(currentItemIndex)
+                }
+            }
+        )
+
+        _uploadViewModel.currUploadInfos.observe(
+            this,
+            Observer { newUploadInfos: UploadInfos? ->
+                _currHistoryEntryIndexInList = _adapterForHistory.findItemIndexByUploadId(newUploadInfos?.id)
+                _historyViewModel.setCurrUploadInfos(newUploadInfos)
+            }
+        )
+
+        _uploadViewModel.currUploadStatusInfos.observe(
+            this,
+            Observer { newUploadStatusInfos: UploadStatusInfos? ->
+                _historyViewModel.setCurrUploadStatusInfos(newUploadStatusInfos)
+            }
+        )
 
         _uploadViewModel.restoreSavedData(savedInstanceState)
     }
@@ -117,12 +156,7 @@ class HistoryActivity : AbsToolbarActivity() {
         val newUri: Uri? = data?.data
 
         if (requestCode == CHOOSE_IMAGE_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK && newUri != null) {
-                //todo afficher une erreur si un upload est déjà en cours.
-                _uploadViewModel.startUploadThisImage(newUri)
-            } else {
-                Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
-            }
+            startUploadThisImage(if (resultCode == Activity.RESULT_OK) newUri else null)
         }
 
         super.onActivityResult(requestCode, resultCode, data)
