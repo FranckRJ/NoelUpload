@@ -92,7 +92,7 @@ class MainActivity : AbsToolbarActivity() {
 
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
 
-        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 2)
+        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 3)
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
         (binding.uploadhistoryListHistory.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
 
