@@ -20,7 +20,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:noHistory="true">
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -36,10 +36,6 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
-
-        <activity
-            android:name=".history.HistoryActivity"
-            android:launchMode="singleTop" />
 
     </application>
 

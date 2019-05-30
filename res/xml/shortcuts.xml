@@ -8,7 +8,7 @@
         android:shortcutShortLabel="@string/upload"
         tools:targetApi="28">
         <intent
-            android:action="com.franckrj.noelupload.ACTION_UPLOAD_IMAGE"
+            android:action="com.franckrj.noelupload.PICK_IMAGE"
             android:targetClass="com.franckrj.noelupload.MainActivity"
             android:targetPackage="com.franckrj.noelupload" />
     </shortcut>
