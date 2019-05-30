@@ -12,7 +12,13 @@ import kotlin.math.roundToInt
 /**
  * Une [CustomTarget] pour sauvegarder le résultat dans un fichier, en redimensionnant si besoin.
  */
-class SaveToFileTarget(private val filePath: String, private val maxWidth: Int, private val maxHeight: Int) :
+class SaveToFileTarget(
+    private val filePath: String,
+    private val maxWidth: Int,
+    private val maxHeight: Int,
+    private val linkedUploadInfos: UploadInfos,
+    var onFinishCallBack: ((SaveToFileTarget, UploadInfos) -> Any?)?
+) :
     CustomTarget<Bitmap>() {
     /**
      * Retourne une nouvelle [Bitmap] redimensionnée (ou la même si pas besoin).
@@ -47,5 +53,6 @@ class SaveToFileTarget(private val filePath: String, private val maxWidth: Int, 
         } catch (e: Exception) {
             /* Rien, tant pis si ça save pas on utilisera le fallback pour la preview. */
         }
+        onFinishCallBack?.invoke(this, linkedUploadInfos)
     }
 }

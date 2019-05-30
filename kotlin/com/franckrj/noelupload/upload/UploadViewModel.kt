@@ -23,6 +23,7 @@ import com.bumptech.glide.Glide
 import com.franckrj.noelupload.AppDatabase
 import com.franckrj.noelupload.R
 import com.franckrj.noelupload.Utils
+import kotlinx.coroutines.delay
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
 /**
@@ -38,6 +39,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private var _firstTimeRestoreIsCalled: Boolean = true
+    private var _listOfCurrentTargets: MutableList<SaveToFileTarget> = mutableListOf()
 
     private val _currUploadInfos: MutableLiveData<UploadInfos?> = MutableLiveData()
     private val _currUploadStatusInfos: MutableLiveData<UploadStatusInfos?> =
@@ -174,6 +176,31 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * Callback executé lorsqu'une miniature a terminée d'être construite.
+     */
+    private fun targetFinished(target: SaveToFileTarget, linkedUploadInfos: UploadInfos) {
+        target.onFinishCallBack = null
+        _listOfCurrentTargets.remove(target)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _uploadInfosDao.insertUploadInfos(linkedUploadInfos)
+        }
+
+        viewModelScope.launch {
+            delay(10)
+            Glide.with(app).clear(target)
+        }
+    }
+
+    override fun onCleared() {
+        for (target in _listOfCurrentTargets) {
+            target.onFinishCallBack = null
+        }
+        _listOfCurrentTargets.clear()
+        super.onCleared()
+    }
+
+    /**
      * Restaure la sauvegarde du [savedInstanceState] si nécessaire.
      */
     fun restoreSavedData(savedInstanceState: Bundle?) {
@@ -210,19 +237,25 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 )
                 val newRowIdForUploadInfos: Long = _uploadInfosDao.insertUploadInfos(newUploadInfos)
 
-                //todo mieux gérer la non-présence de la miniature au début, un placeholder puis refresh dès qu'elle est dispo
-                Glide.with(app)
-                    .asBitmap()
-                    .load(newImageUri)
-                    .into(
-                        SaveToFileTarget(
-                            "${app.filesDir.path}/${newUploadInfos.uploadTimeInMs}-${newUploadInfos.imageName}",
-                            _maxPreviewWidth,
-                            _maxPreviewHeight
-                        )
-                    )
-
                 newUploadInfos = _uploadInfosDao.findByRowId(newRowIdForUploadInfos)!!
+
+                withContext(Dispatchers.Main) {
+                    _listOfCurrentTargets.add(
+                        Glide.with(app)
+                            .asBitmap()
+                            .load(newImageUri)
+                            .into(
+                                SaveToFileTarget(
+                                    "${app.filesDir.path}/${newUploadInfos.uploadTimeInMs}-${newUploadInfos.imageName}",
+                                    _maxPreviewWidth,
+                                    _maxPreviewHeight,
+                                    newUploadInfos,
+                                    ::targetFinished
+                                )
+                            )
+                    )
+                }
+
                 _currUploadInfos.postValue(newUploadInfos)
 
                 try {
