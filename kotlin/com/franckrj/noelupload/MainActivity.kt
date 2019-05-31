@@ -158,14 +158,14 @@ class MainActivity : AbsToolbarActivity() {
     }
 
     /**
-     * Intercepte le retour de l'intent pour sélectionner une image et sauvegarde son résultat, ou
+     * Intercepte le retour de l'intent pour sélectionner une image et upload son résultat, ou
      * affiche une erreur si le retour est invalide.
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val newUri: Uri? = data?.data
 
-        if (requestCode == CHOOSE_IMAGE_REQUEST_CODE) {
-            startUploadThisImage(if (resultCode == Activity.RESULT_OK) newUri else null)
+        if (requestCode == CHOOSE_IMAGE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            startUploadThisImage(newUri)
         }
 
         super.onActivityResult(requestCode, resultCode, data)
