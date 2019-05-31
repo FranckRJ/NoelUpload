@@ -11,4 +11,5 @@
     <string name="upload_already_running">Erreur, un upload est déjà en cours.</string>
     <string name="uploadProgress">%1$s%%</string>
     <string name="imagePreview">Aperçu de l\'image</string>
+    <string name="error">Erreur</string>
 </resources>

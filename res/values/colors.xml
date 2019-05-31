@@ -9,5 +9,6 @@
     <color name="colorSurface">#121212</color>
     <color name="colorElevate">#1e1e1e</color>
     <color name="colorControlHighlight">#757575</color>
-    <color name="colorTransparentBackground">#BB222222</color>
+    <color name="colorTransparentBackgroundNormal">#BB222222</color>
+    <color name="colorTransparentBackgroundError">#BBC62828</color>
 </resources>

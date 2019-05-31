@@ -19,13 +19,13 @@
             android:contentDescription="@string/imagePreview" />
 
         <View
+            android:id="@+id/background_info_view_history_row"
             android:layout_width="match_parent"
             android:layout_height="18sp"
-            android:layout_alignParentBottom="true"
-            android:background="@color/colorTransparentBackground" />
+            android:layout_alignParentBottom="true" />
 
         <TextView
-            android:id="@+id/imagename_text_history_row"
+            android:id="@+id/error_text_history_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
@@ -33,7 +33,9 @@
             android:lines="1"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
+            android:text="@string/error"
             android:textSize="12sp"
+            android:textStyle="bold"
             tools:ignore="RelativeOverlap" />
 
         <ProgressBar
@@ -41,10 +43,10 @@
             style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:progressTint="@android:color/white"
-            android:progressBackgroundTint="@android:color/transparent"
             android:layout_alignParentBottom="true"
-            android:indeterminate="false" />
+            android:indeterminate="false"
+            android:progressBackgroundTint="@android:color/transparent"
+            android:progressTint="@android:color/white" />
 
     </com.franckrj.noelupload.SquareRelativeLayout>
 

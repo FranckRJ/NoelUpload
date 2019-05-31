@@ -65,7 +65,8 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
     class HistoryViewHolder(private val mainView: View, private val clickCallback: (Int) -> Any?) :
         RecyclerView.ViewHolder(mainView) {
         private val _imagePreview: ImageView = mainView.findViewById(R.id.imagepreview_image_history_row)
-        private val _imageName: TextView = mainView.findViewById(R.id.imagename_text_history_row)
+        private val _infoBackground: View = mainView.findViewById(R.id.background_info_view_history_row)
+        private val _errorText: TextView = mainView.findViewById(R.id.error_text_history_row)
         private val _uploadProgress: ProgressBar = mainView.findViewById(R.id.upload_progress_history_row)
 
         init {
@@ -93,14 +94,25 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
                 .centerCrop()
                 .into(_imagePreview)
 
-            if (currUploadProgression in 0..100) {
-                _imageName.visibility = View.GONE
-                _uploadProgress.visibility = View.VISIBLE
-                _uploadProgress.progress = currUploadProgression
-            } else {
-                _imageName.visibility = View.VISIBLE
-                _uploadProgress.visibility = View.GONE
-                _imageName.text = historyEntryInfos.uploadInfos.imageName
+            when {
+                currUploadProgression in 0..100 -> {
+                    _infoBackground.setBackgroundResource(R.color.colorTransparentBackgroundNormal)
+                    _infoBackground.visibility = View.VISIBLE
+                    _errorText.visibility = View.GONE
+                    _uploadProgress.visibility = View.VISIBLE
+                    _uploadProgress.progress = currUploadProgression
+                }
+                historyEntryInfos.uploadInfos.imageBaseLink.isNotEmpty() -> {
+                    _infoBackground.visibility = View.GONE
+                    _errorText.visibility = View.GONE
+                    _uploadProgress.visibility = View.GONE
+                }
+                else -> {
+                    _infoBackground.setBackgroundResource(R.color.colorTransparentBackgroundError)
+                    _infoBackground.visibility = View.VISIBLE
+                    _errorText.visibility = View.VISIBLE
+                    _uploadProgress.visibility = View.GONE
+                }
             }
 
             mainView.tag = position
