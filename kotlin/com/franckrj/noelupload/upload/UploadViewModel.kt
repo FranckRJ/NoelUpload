@@ -139,9 +139,9 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             .build()
 
         val client = OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.MINUTES)
-            .writeTimeout(10, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
         val responseString: String? = client.newCall(request).execute().body()?.string()
 
