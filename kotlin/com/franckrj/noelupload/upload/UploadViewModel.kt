@@ -226,7 +226,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
      */
     fun startUploadThisImage(newImageUri: Uri): Boolean {
-        if (_currUploadStatusInfos.value?.status == UploadStatus.FINISHED) {
+        if (_currUploadStatusInfos.value?.status != UploadStatus.UPLOADING) {
             _currUploadStatusInfos.value = (UploadStatusInfos(UploadStatus.UPLOADING, "0"))
 
             viewModelScope.launch(Dispatchers.IO) {
