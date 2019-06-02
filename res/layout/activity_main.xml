@@ -36,11 +36,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:onClick="@{() -> activity.pickAnImage()}"
-            android:src="@drawable/ic_pick_image_white_36dp"
+            android:src="@drawable/ic_file_upload_white_24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:maxImageSize="36dp" />
+            app:layout_constraintStart_toStartOf="parent" />
 
         <include
             android:id="@+id/toolbar_history"
