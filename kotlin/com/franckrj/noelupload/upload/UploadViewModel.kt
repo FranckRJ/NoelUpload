@@ -3,8 +3,10 @@ package com.franckrj.noelupload.upload
 import android.app.Application
 import android.content.ContentResolver
 import android.database.Cursor
+import android.location.Location
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +23,9 @@ import com.franckrj.noelupload.R
 import com.franckrj.noelupload.utils.Utils
 import com.franckrj.noelupload.history.HistoryEntryRepository
 import kotlinx.coroutines.delay
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
@@ -76,24 +81,49 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Retourne un [ByteArrayOutputStream] avec le contenu de l'[uriToRead], ou null en cas d'erreur.
+     * Retourne un [ByteArrayOutputStream] avec le contenu du [fileToRead], ou null en cas d'erreur.
      */
-    private suspend fun readUriContent(uriToRead: Uri): ByteArrayOutputStream? = withContext(Dispatchers.IO) {
+    private suspend fun readFileContent(fileToRead: File): ByteArrayOutputStream? = withContext(Dispatchers.IO) {
         try {
-            app.contentResolver.openInputStream(uriToRead)?.use { inputStream ->
-                val streamResult = ByteArrayOutputStream()
+            FileInputStream(fileToRead).use { inputStream ->
+                val outputStreamResult = ByteArrayOutputStream()
                 val buffer = ByteArray(8192)
+
                 var length = inputStream.read(buffer)
                 while (length != -1) {
-                    streamResult.write(buffer, 0, length)
+                    outputStreamResult.write(buffer, 0, length)
                     length = inputStream.read(buffer)
                 }
-                streamResult
+                outputStreamResult
             }
         } catch (e: Exception) {
             null
         }
     }
+
+    /**
+     * Sauvegarde le contenu de [uriToSave] dans le fichier [destinationFile]. Retourne true en cas de succes et false
+     * si une erreur a eu lieu.
+     */
+    private suspend fun saveUriContentToFile(uriToSave: Uri, destinationFile: File): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                app.contentResolver.openInputStream(uriToSave)?.use { inputStream ->
+                    FileOutputStream(destinationFile, false).use { outputFile ->
+                        val buffer = ByteArray(8192)
+
+                        var length = inputStream.read(buffer)
+                        while (length != -1) {
+                            outputFile.write(buffer, 0, length)
+                            length = inputStream.read(buffer)
+                        }
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
 
     /**
      * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
@@ -141,13 +171,13 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     /**
      * Upload l'image passée en paramètre et retourne son lien noelshack ou throw en cas d'erreur.
      */
-    private suspend fun uploadThisImage(imageUri: Uri, uploadInfos: UploadInfos): String {
-        val fileContent = readUriContent(imageUri)
+    private suspend fun uploadThisImage(imageFile: File, fileType: String?, uploadInfos: UploadInfos): String {
+        val fileContent = readFileContent(imageFile)
 
         return if (fileContent != null) {
             val uploadResponse: String = uploadBitmapImage(
                 fileContent.toByteArray(),
-                app.contentResolver.getType(imageUri) ?: "image/*",
+                fileType ?: "image/*",
                 uploadInfos
             )
 
@@ -197,6 +227,44 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         )
     }
 
+    private suspend fun createCachedFileForUpload(baseUri: Uri, uploadInfos: UploadInfos): File =
+        withContext(Dispatchers.IO) {
+            val cachedFile =
+                File("${app.cacheDir.path}/file-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}.nop")
+
+            if (!saveUriContentToFile(baseUri, cachedFile)) {
+                throw Exception(app.getString(R.string.errorUploadFailed))
+            }
+
+            try {
+                val exifInterface = ExifInterface(cachedFile)
+                exifInterface.setGpsInfo(Location(""))
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING_REF, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE_REF, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE, null)
+                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF, null)
+                exifInterface.saveAttributes()
+            } catch (e: Exception) {
+                /* Le fichier ne supporte pas les EXIF c'est pas grave. */
+            }
+
+            cachedFile
+        }
+
     override fun onCleared() {
         for (target in _listOfCurrentTargets) {
             target.onFinishCallBack = null
@@ -223,8 +291,11 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 createPreviewForThisUploadInfos(newUploadInfos)
 
                 try {
-                    val linkOfImage = uploadThisImage(newImageUri, newUploadInfos)
+                    val fileToUpload = createCachedFileForUpload(newImageUri, newUploadInfos)
+                    val linkOfImage =
+                        uploadThisImage(fileToUpload, app.contentResolver.getType(newImageUri), newUploadInfos)
                     _historyEntryRepo.postUpdateThisUploadInfosLinkAndSetFinished(newUploadInfos, linkOfImage)
+                    fileToUpload.delete()
                 } catch (e: Exception) {
                     _historyEntryRepo.postUpdateThisUploadInfosStatus(
                         newUploadInfos,

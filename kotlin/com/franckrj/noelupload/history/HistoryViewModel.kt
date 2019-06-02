@@ -18,7 +18,7 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * Applique le changement [historyEntryChange] à la liste [_listOfHistoryEntries] s'il est valide.
-     * Retourne vrai si le changement est valide, faux s'il est invalide.
+     * Retourne true si le changement est valide, false s'il est invalide.
      */
     fun applyHistoryChange(historyEntryChange: HistoryEntryRepository.HistoryEntryChangeInfos): Boolean {
         when (historyEntryChange.changeType) {
