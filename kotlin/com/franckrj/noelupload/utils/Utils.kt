@@ -94,4 +94,11 @@ object Utils {
 
         return link
     }
+
+    /**
+     * Converti [uri] en nom de fichier valide pour Android.
+     */
+    fun uriToFileName(uri: String): String {
+        return uri.replace(Regex("""[ |\\?*<":>+\[\]/']"""), "-")
+    }
 }

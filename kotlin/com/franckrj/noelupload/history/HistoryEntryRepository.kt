@@ -92,7 +92,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
      * Retourne le fichier de la preview d'une entrée de l'historique.
      */
     fun getPreviewFileFromUploadInfos(uploadInfos: UploadInfos): File {
-        return File("${appContext.filesDir.path}/${uploadInfos.uploadTimeInMs}-${uploadInfos.imageName}")
+        return File("${appContext.filesDir.path}/prev-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}")
     }
 
     /**
