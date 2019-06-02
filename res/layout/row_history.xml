@@ -21,7 +21,8 @@
         <View
             android:id="@+id/background_info_view_history_row"
             android:layout_width="match_parent"
-            android:layout_height="18sp"
+            android:layout_height="0dp"
+            android:layout_alignTop="@+id/error_text_history_row"
             android:layout_alignParentBottom="true" />
 
         <TextView
@@ -32,7 +33,9 @@
             android:ellipsize="end"
             android:lines="1"
             android:paddingStart="4dp"
+            android:paddingTop="2dp"
             android:paddingEnd="4dp"
+            android:paddingBottom="2dp"
             android:text="@string/error"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -44,8 +47,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:indeterminate="false"
-            android:progressBackgroundTint="@android:color/transparent"
+            android:indeterminateTint="@android:color/white"
+            android:indeterminateTintMode="src_in"
             android:progressTint="@android:color/white" />
 
     </com.franckrj.noelupload.SquareRelativeLayout>

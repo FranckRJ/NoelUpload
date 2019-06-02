@@ -92,9 +92,14 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
                 currUploadProgression in 0..100 -> {
                     _infoBackground.setBackgroundResource(R.color.colorTransparentBackgroundNormal)
                     _infoBackground.visibility = View.VISIBLE
-                    _errorText.visibility = View.GONE
+                    _errorText.visibility = View.INVISIBLE
                     _uploadProgress.visibility = View.VISIBLE
-                    _uploadProgress.progress = currUploadProgression
+                    if (currUploadProgression == 0) {
+                        _uploadProgress.isIndeterminate = true
+                    } else {
+                        _uploadProgress.isIndeterminate = false
+                        _uploadProgress.progress = currUploadProgression
+                    }
                 }
                 historyEntry.imageBaseLink.isNotEmpty() -> {
                     _infoBackground.visibility = View.GONE
