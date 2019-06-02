@@ -227,6 +227,11 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         )
     }
 
+    /**
+     * Retourne une copie du fichier représenté par [baseUri]. Si cette copie possède des données EXIF les tags de GPS
+     * seront supprimés, throw en cas d'erreur de création de la copie.
+     * La copie est sauvegardées dans le cache, elle doit être supprimée après utilisation.
+     */
     private suspend fun createCachedFileForUpload(baseUri: Uri, uploadInfos: UploadInfos): File =
         withContext(Dispatchers.IO) {
             val cachedFile =
