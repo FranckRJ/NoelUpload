@@ -13,7 +13,7 @@ import kotlin.math.roundToInt
  * Une [CustomTarget] pour sauvegarder le résultat dans un fichier, en redimensionnant si besoin.
  */
 class SaveToFileTarget(
-    private val filePath: String,
+    private val fileToUse: File,
     private val maxWidth: Int,
     private val maxHeight: Int,
     private val linkedUploadInfos: UploadInfos,
@@ -45,8 +45,7 @@ class SaveToFileTarget(
     override fun onResourceReady(bitmapResource: Bitmap, transition: Transition<in Bitmap>?) {
         try {
             val bitmapScaled = scaleBitmapIfNeeded(bitmapResource)
-            val imageFile = File(filePath, "")
-            FileOutputStream(imageFile).use { imageFileOutStream ->
+            FileOutputStream(fileToUse).use { imageFileOutStream ->
                 bitmapScaled.compress(Bitmap.CompressFormat.JPEG, 100, imageFileOutStream)
             }
         } catch (e: Exception) {

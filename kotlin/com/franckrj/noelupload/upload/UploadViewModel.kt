@@ -112,12 +112,12 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * La fonction doit être appelée dans un background thread.
      */
     @Suppress("RedundantSuspendModifier")
-    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileType: String, imageUploadInfos: UploadInfos): String {
+    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileType: String, uploadInfos: UploadInfos): String {
         val mediaTypeForFile = MediaType.parse(fileType)
         val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
             "fichier",
-            imageUploadInfos.imageName,
-            ProgressRequestBody(mediaTypeForFile, fileContent, imageUploadInfos, ::uploadProgressChanged)
+            uploadInfos.imageName,
+            ProgressRequestBody(mediaTypeForFile, fileContent, uploadInfos, ::uploadProgressChanged)
         ).build()
         val request = Request.Builder()
             .url("http://www.noelshack.com/api.php")
@@ -141,14 +141,14 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     /**
      * Upload l'image passée en paramètre et retourne son lien noelshack ou throw en cas d'erreur.
      */
-    private suspend fun uploadThisImage(imageUri: Uri, imageUploadInfos: UploadInfos): String {
+    private suspend fun uploadThisImage(imageUri: Uri, uploadInfos: UploadInfos): String {
         val fileContent = readUriContent(imageUri)
 
         return if (fileContent != null) {
             val uploadResponse: String = uploadBitmapImage(
                 fileContent.toByteArray(),
                 app.contentResolver.getType(imageUri) ?: "image/*",
-                imageUploadInfos
+                uploadInfos
             )
 
             if (Utils.checkIfItsANoelshackImageLink(uploadResponse)) {
@@ -177,6 +177,26 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Créé une preview pour l'[uploadInfos].
+     */
+    private suspend fun createPreviewForThisUploadInfos(uploadInfos: UploadInfos) = withContext(Dispatchers.Main) {
+        _listOfCurrentTargets.add(
+            Glide.with(app)
+                .asBitmap()
+                .load(uploadInfos.imageUri)
+                .into(
+                    SaveToFileTarget(
+                        _historyEntryRepo.getPreviewFileFromUploadInfos(uploadInfos),
+                        _maxPreviewWidth,
+                        _maxPreviewHeight,
+                        uploadInfos,
+                        ::targetFinished
+                    )
+                )
+        )
+    }
+
     override fun onCleared() {
         for (target in _listOfCurrentTargets) {
             target.onFinishCallBack = null
@@ -195,28 +215,12 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 val newUploadInfos = UploadInfos(
                     "",
                     getFileName(newImageUri),
-                    newImageUri.path.orEmpty(),
+                    newImageUri.toString(),
                     System.currentTimeMillis()
                 )
 
                 _historyEntryRepo.postAddThisUploadInfos(newUploadInfos)
-
-                withContext(Dispatchers.Main) {
-                    _listOfCurrentTargets.add(
-                        Glide.with(app)
-                            .asBitmap()
-                            .load(newImageUri)
-                            .into(
-                                SaveToFileTarget(
-                                    "${app.filesDir.path}/${newUploadInfos.uploadTimeInMs}-${newUploadInfos.imageName}",
-                                    _maxPreviewWidth,
-                                    _maxPreviewHeight,
-                                    newUploadInfos,
-                                    ::targetFinished
-                                )
-                            )
-                    )
-                }
+                createPreviewForThisUploadInfos(newUploadInfos)
 
                 try {
                     val linkOfImage = uploadThisImage(newImageUri, newUploadInfos)
