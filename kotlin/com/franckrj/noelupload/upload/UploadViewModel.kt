@@ -219,7 +219,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                     System.currentTimeMillis()
                 )
 
-                _historyEntryRepo.postAddThisUploadInfos(newUploadInfos)
+                _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
                 createPreviewForThisUploadInfos(newUploadInfos)
 
                 try {

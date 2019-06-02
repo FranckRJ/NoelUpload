@@ -154,7 +154,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
                 historyEntry.uploadStatus = UploadStatus.FINISHED
                 historyEntry.uploadStatusMessage = ""
 
-                withContext(Dispatchers.IO) {
+                GlobalScope.launch(Dispatchers.IO) {
                     _uploadInfosDao.insertUploadInfos(
                         UploadInfos(
                             newLink,
@@ -206,10 +206,10 @@ class HistoryEntryRepository private constructor(private val appContext: Context
      * Ajoute une nouvelle entrée dans [_listOfHistoryEntries] correspondant au [uploadInfos] sur le main thread et
      * dispatch les modifications.
      */
-    fun postAddThisUploadInfos(uploadInfos: UploadInfos?) =
-        GlobalScope.launch(Dispatchers.Main) {
+    suspend fun blockAddThisUploadInfos(uploadInfos: UploadInfos?) =
+        withContext(Dispatchers.Main) {
             if (uploadInfos != null) {
-                withContext(Dispatchers.IO) {
+                GlobalScope.launch(Dispatchers.IO) {
                     _uploadInfosDao.insertUploadInfos(uploadInfos)
                 }
                 _listOfHistoryEntries.add(uploadInfosToHistoryEntry(uploadInfos, false))
