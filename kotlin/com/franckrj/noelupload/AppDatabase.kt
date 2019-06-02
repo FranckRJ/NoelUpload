@@ -10,7 +10,7 @@ import com.franckrj.noelupload.upload.UploadInfosDao
 /**
  * Database de l'application, contenant notamment les informations sur les uploads.
  */
-@Database(entities = [UploadInfos::class], version = 2)
+@Database(entities = [UploadInfos::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {
     companion object {
         lateinit var instance: AppDatabase

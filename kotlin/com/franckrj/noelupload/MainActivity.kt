@@ -14,10 +14,10 @@ import com.franckrj.noelupload.databinding.ActivityMainBinding
 import com.franckrj.noelupload.history.HistoryEntryInfos
 import com.franckrj.noelupload.history.HistoryListAdapter
 import com.franckrj.noelupload.history.HistoryViewModel
-import com.franckrj.noelupload.upload.UploadInfos
-import com.franckrj.noelupload.upload.UploadStatusInfos
 import com.franckrj.noelupload.upload.UploadViewModel
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.franckrj.noelupload.history.HistoryEntryRepository
+import com.franckrj.noelupload.utils.Utils
 
 /**
  * Activité principale pour consulter l'historique des uploads et upload des nouvelles images.
@@ -33,14 +33,13 @@ class MainActivity : AbsToolbarActivity() {
     private lateinit var _historyViewModel: HistoryViewModel
     private lateinit var _uploadViewModel: UploadViewModel
     private val _adapterForHistory = HistoryListAdapter()
-    private var _currHistoryEntryIndexInList: Int = -1
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
      * le presse-papier ou affiche une erreur.
      */
     private fun itemInHistoryListClicked(historyEntryInfos: HistoryEntryInfos) {
-        val linkOfImage: String = Utils.noelshackToDirectLink(historyEntryInfos.uploadInfos.imageBaseLink)
+        val linkOfImage: String = Utils.noelshackToDirectLink(historyEntryInfos.imageBaseLink)
 
         if (Utils.checkIfItsANoelshackImageLink(linkOfImage)) {
             Utils.putStringInClipboard(this, linkOfImage)
@@ -90,62 +89,46 @@ class MainActivity : AbsToolbarActivity() {
 
         initToolbar(binding.toolbarHistory as Toolbar, homeIsBack = false, displayHome = false)
 
+        _adapterForHistory.listOfHistoryEntries = _historyViewModel.listOfHistoryEntries
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
+        _adapterForHistory.notifyDataSetChanged()
 
         binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 3)
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
         (binding.uploadhistoryListHistory.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
 
-        _historyViewModel.liveListOfHistoryEntries.observe(
+        _historyViewModel.listOfHistoryEntriesChanges.observe(
             this,
-            Observer { newListOfHistoryEntries: List<HistoryEntryInfos>? ->
-                if (newListOfHistoryEntries != null) {
-                    _adapterForHistory.listOfHistoryEntries = newListOfHistoryEntries
-                    _adapterForHistory.notifyDataSetChanged()
-                    if (_adapterForHistory.itemCount > 0) {
-                        binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+            Observer { newListOfHistoryEntriesChanges: List<HistoryEntryRepository.HistoryEntryChangeInfos> ->
+                while (newListOfHistoryEntriesChanges.isNotEmpty()) {
+                    val historyEntryChange: HistoryEntryRepository.HistoryEntryChangeInfos =
+                        newListOfHistoryEntriesChanges.first()
+
+                    if (_historyViewModel.applyHistoryChange(historyEntryChange)) {
+                        when (historyEntryChange.changeType) {
+                            HistoryEntryRepository.HistoryEntryChangeType.NEW -> {
+                                _adapterForHistory.notifyItemInserted(historyEntryChange.changeIndex)
+                                binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+                            }
+                            HistoryEntryRepository.HistoryEntryChangeType.DELETED -> {
+                                _adapterForHistory.notifyItemRemoved(historyEntryChange.changeIndex)
+                            }
+                            HistoryEntryRepository.HistoryEntryChangeType.CHANGED -> {
+                                _adapterForHistory.notifyItemChanged(historyEntryChange.changeIndex)
+                            }
+                            HistoryEntryRepository.HistoryEntryChangeType.FINISHED -> {
+                                _adapterForHistory.notifyItemChanged(historyEntryChange.changeIndex)
+                            }
+                        }
                     }
+                    _historyViewModel.removeFirstHistoryEntryChange()
                 }
-                _currHistoryEntryIndexInList =
-                    _adapterForHistory.findItemIndexByUploadId(_uploadViewModel.currUploadInfos.value?.id)
             })
 
-        _historyViewModel.currHistoryEntryHasBeenChanged.observe(
-            this,
-            Observer {
-                val currentItemIndex: Int = _currHistoryEntryIndexInList
-
-                if (currentItemIndex >= 0 && currentItemIndex < _adapterForHistory.itemCount) {
-                    _adapterForHistory.notifyItemChanged(currentItemIndex)
-                }
-            }
-        )
-
-        _uploadViewModel.currUploadInfos.observe(
-            this,
-            Observer { newUploadInfos: UploadInfos? ->
-                _currHistoryEntryIndexInList = _adapterForHistory.findItemIndexByUploadId(newUploadInfos?.id)
-                _historyViewModel.setCurrUploadInfos(newUploadInfos)
-            }
-        )
-
-        _uploadViewModel.currUploadStatusInfos.observe(
-            this,
-            Observer { newUploadStatusInfos: UploadStatusInfos? ->
-                _historyViewModel.setCurrUploadStatusInfos(newUploadStatusInfos)
-            }
-        )
-
-        _uploadViewModel.restoreSavedData(savedInstanceState)
-
         if (savedInstanceState == null) {
+            binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
             consumeIntent(intent)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        _uploadViewModel.onSaveData(outState)
     }
 
     /**

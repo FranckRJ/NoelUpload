@@ -4,11 +4,8 @@ import android.app.Application
 import android.content.ContentResolver
 import android.database.Cursor
 import android.net.Uri
-import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,33 +17,23 @@ import okhttp3.Request
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 import com.bumptech.glide.Glide
-import com.franckrj.noelupload.AppDatabase
 import com.franckrj.noelupload.R
-import com.franckrj.noelupload.Utils
+import com.franckrj.noelupload.utils.Utils
+import com.franckrj.noelupload.history.HistoryEntryRepository
 import kotlinx.coroutines.delay
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
+//todo mais est-ce vraiment utile de save des trucs si l'upload échoue à cause du manque de mémoire ?
 /**
  * ViewModel contenant les diverses informations pour upload un fichier.
  */
 class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
-    companion object {
-        private const val SAVE_UPLOAD_INFOS = "SAVE_UPLOAD_INFOS"
-        private const val SAVE_UPLOAD_STATUS_INFOS = "SAVE_UPLOAD_STATUS_INFOS"
-    }
-
-    private val _uploadInfosDao: UploadInfosDao = AppDatabase.instance.uploadInfosDao()
+    private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.getInstance(app)
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
-    private var _firstTimeRestoreIsCalled: Boolean = true
     private var _listOfCurrentTargets: MutableList<SaveToFileTarget> = mutableListOf()
 
-    private val _currUploadInfos: MutableLiveData<UploadInfos?> = MutableLiveData()
-    private val _currUploadStatusInfos: MutableLiveData<UploadStatusInfos?> =
-        MutableLiveData(UploadStatusInfos(UploadStatus.FINISHED))
-
-    val currUploadInfos: LiveData<UploadInfos?> = _currUploadInfos
-    val currUploadStatusInfos: LiveData<UploadStatusInfos?> = _currUploadStatusInfos
+    private var _currUploadInfos: UploadInfos? = null
 
     /**
      * Retourne le nom du fichier pointé par [uri] via le [ContentResolver]. S'il n'est pas trouvé retourne
@@ -111,13 +98,12 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
      * de progression de la requête.
      */
-    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) = viewModelScope.launch {
-        //todo checker si ça peut pas override un postValue(FINISHED) (ou ERROR) par inadvertance.
-        _currUploadStatusInfos.postValue(
-            UploadStatusInfos(
-                UploadStatus.UPLOADING,
-                ((bytesSended * 100) / totalBytesToSend).toString()
-            )
+    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) {
+        //todo ne plus utiliser _currUploadInfos mais le passer en paramètre de la fonction ?
+        _historyEntryRepo.postUpdateThisUploadInfosStatus(
+            _currUploadInfos,
+            UploadStatus.UPLOADING,
+            ((bytesSended * 100) / totalBytesToSend).toString()
         )
     }
 
@@ -182,10 +168,9 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         target.onFinishCallBack = null
         _listOfCurrentTargets.remove(target)
 
-        viewModelScope.launch(Dispatchers.IO) {
-            _uploadInfosDao.insertUploadInfos(linkedUploadInfos)
-        }
+        _historyEntryRepo.postUpdateThisUploadInfosPreview(linkedUploadInfos)
 
+        //todo c'est potentiellement pas propre, checker pour faire mieux ?
         viewModelScope.launch {
             delay(10)
             Glide.with(app).clear(target)
@@ -201,43 +186,23 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Restaure la sauvegarde du [savedInstanceState] si nécessaire.
-     */
-    fun restoreSavedData(savedInstanceState: Bundle?) {
-        if (savedInstanceState != null && _firstTimeRestoreIsCalled) {
-            //todo gérer la sauvegarde / restauration
-            /*_currUploadInfos.value = savedInstanceState.getParcelable(SAVE_UPLOAD_INFOS) as? UploadInfos
-            _currUploadStatusInfos.value = savedInstanceState.getParcelable(SAVE_UPLOAD_STATUS_INFOS) as? UploadStatusInfos*/
-        }
-        _firstTimeRestoreIsCalled = false
-    }
-
-    /**
-     * Sauvegarde les informations necessaires pour le [UploadViewModel] dans le [outState].
-     */
-    fun onSaveData(outState: Bundle) {
-        //todo gérer la sauvegarde / restauration
-        /*outState.putParcelable(SAVE_UPLOAD_INFOS, _currUploadInfos.value)
-        outState.putParcelable(SAVE_UPLOAD_STATUS_INFOS, _currUploadStatusInfos.value)*/
-    }
-
-    /**
      * Initialise des trucs pour ajouter l'image pointée par [newImageUri] à l'historique et lance son upload.
      * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
      */
     fun startUploadThisImage(newImageUri: Uri): Boolean {
-        if (_currUploadStatusInfos.value?.status != UploadStatus.UPLOADING) {
-            _currUploadStatusInfos.value = (UploadStatusInfos(UploadStatus.UPLOADING, "0"))
+        if (_currUploadInfos == null) {
+            _currUploadInfos = UploadInfos.DUMB
 
             viewModelScope.launch(Dispatchers.IO) {
-                var newUploadInfos = UploadInfos(
+                val newUploadInfos = UploadInfos(
                     "",
                     getFileName(newImageUri),
+                    newImageUri.path.orEmpty(),
                     System.currentTimeMillis()
                 )
-                val newRowIdForUploadInfos: Long = _uploadInfosDao.insertUploadInfos(newUploadInfos)
+                _currUploadInfos = newUploadInfos
 
-                newUploadInfos = _uploadInfosDao.findByRowId(newRowIdForUploadInfos)!!
+                _historyEntryRepo.postAddThisUploadInfos(newUploadInfos)
 
                 withContext(Dispatchers.Main) {
                     _listOfCurrentTargets.add(
@@ -256,22 +221,17 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                     )
                 }
 
-                _currUploadInfos.postValue(newUploadInfos)
-
                 try {
                     val linkOfImage = uploadThisImage(newImageUri, newUploadInfos)
-                    newUploadInfos = UploadInfos(
-                        linkOfImage,
-                        newUploadInfos.imageName,
-                        newUploadInfos.uploadTimeInMs,
-                        newUploadInfos.id
-                    )
-
-                    _uploadInfosDao.insertUploadInfos(newUploadInfos)
-                    _currUploadInfos.postValue(newUploadInfos)
-                    _currUploadStatusInfos.postValue(UploadStatusInfos(UploadStatus.FINISHED))
+                    _historyEntryRepo.postUpdateThisUploadInfosLinkAndSetFinished(newUploadInfos, linkOfImage)
                 } catch (e: Exception) {
-                    _currUploadStatusInfos.postValue(UploadStatusInfos(UploadStatus.ERROR, e.message.orEmpty()))
+                    _historyEntryRepo.postUpdateThisUploadInfosStatus(
+                        newUploadInfos,
+                        UploadStatus.ERROR,
+                        e.message.toString()
+                    )
+                } finally {
+                    _currUploadInfos = null
                 }
             }
 

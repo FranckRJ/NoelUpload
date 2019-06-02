@@ -1,4 +1,4 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.utils
 
 import android.content.ClipData
 import android.content.ClipboardManager

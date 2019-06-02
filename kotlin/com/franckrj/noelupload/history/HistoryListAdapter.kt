@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.franckrj.noelupload.R
-import com.franckrj.noelupload.upload.UploadInfos
+import com.franckrj.noelupload.upload.UploadStatus
 
 /**
  * Adapater pour l'historique des informations des uploads.
@@ -25,23 +25,6 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
     private fun itemInListClicked(position: Int) {
         if (position >= 0 && position < listOfHistoryEntries.size) {
             itemClickedCallback?.invoke(listOfHistoryEntries[position])
-        }
-    }
-
-    /**
-     * Retourne l'index de [HistoryEntryInfos] ayant un [UploadInfos] d'un id [id].
-     * Retourne -1 si rien n'a été trouvé.
-     */
-    fun findItemIndexByUploadId(id: Long?): Int {
-        if (id == null) {
-            return -1
-        } else {
-            for (i in 0 until listOfHistoryEntries.size) {
-                if (listOfHistoryEntries[i].uploadInfos.id == id) {
-                    return i
-                }
-            }
-            return -1
         }
     }
 
@@ -78,21 +61,32 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
          * L'image de preview sera chargée si le fichier est différent de null, sinon la miniature noelshack sera utilisée.
          * L'image de preview vaut null si le fichier n'existe pas.
          */
-        fun bindView(historyEntryInfos: HistoryEntryInfos, position: Int) {
-            val currUploadProgression: Int = historyEntryInfos.uploadProgression
+        fun bindView(historyEntry: HistoryEntryInfos, position: Int) {
+            val currUploadProgression: Int = if (historyEntry.uploadStatus == UploadStatus.UPLOADING) {
+                historyEntry.uploadStatusMessage.toIntOrNull() ?: -1
+            } else {
+                -1
+            }
 
-            Glide.with(mainView.context)
-                .load(historyEntryInfos.fileForPreview ?: historyEntryInfos.fallbackPreviewUrl)
-                .placeholder(R.drawable.ic_file_downloading_white_24dp)
-                .error(
-                    if (historyEntryInfos.uploadInfos.imageBaseLink.isEmpty()) {
-                        R.drawable.ic_file_downloading_white_24dp
-                    } else {
-                        R.drawable.ic_file_download_failed_white_24dp
-                    }
-                )
-                .centerCrop()
-                .into(_imagePreview)
+            if (historyEntry.fileForPreview != null || historyEntry.fallbackPreviewUrl.isNotEmpty()) {
+                Glide.with(mainView.context)
+                    .load(historyEntry.fileForPreview ?: historyEntry.fallbackPreviewUrl)
+                    .placeholder(R.drawable.ic_file_downloading_white_24dp)
+                    .error(
+                        if (historyEntry.imageBaseLink.isEmpty()) {
+                            R.drawable.ic_file_downloading_white_24dp
+                        } else {
+                            R.drawable.ic_file_download_failed_white_24dp
+                        }
+                    )
+                    .centerCrop()
+                    .into(_imagePreview)
+            } else {
+                Glide.with(mainView.context)
+                    .load(R.drawable.ic_file_downloading_white_24dp)
+                    .centerCrop()
+                    .into(_imagePreview)
+            }
 
             when {
                 currUploadProgression in 0..100 -> {
@@ -102,7 +96,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
                     _uploadProgress.visibility = View.VISIBLE
                     _uploadProgress.progress = currUploadProgression
                 }
-                historyEntryInfos.uploadInfos.imageBaseLink.isNotEmpty() -> {
+                historyEntry.imageBaseLink.isNotEmpty() -> {
                     _infoBackground.visibility = View.GONE
                     _errorText.visibility = View.GONE
                     _uploadProgress.visibility = View.GONE
