@@ -168,7 +168,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
                 _listOfHistoryEntriesChanges.value.add(
                     HistoryEntryChangeInfos(
                         historyEntry.copy(),
-                        HistoryEntryChangeType.FINISHED,
+                        HistoryEntryChangeType.CHANGED,
                         indexInList
                     )
                 )
@@ -230,8 +230,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
     enum class HistoryEntryChangeType {
         NEW,
         DELETED,
-        CHANGED,
-        FINISHED
+        CHANGED
     }
 
     /**

@@ -17,6 +17,7 @@ import com.franckrj.noelupload.history.HistoryViewModel
 import com.franckrj.noelupload.upload.UploadViewModel
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.history.HistoryEntryRepository
+import com.franckrj.noelupload.upload.UploadStatus
 import com.franckrj.noelupload.utils.Utils
 
 /**
@@ -43,9 +44,9 @@ class MainActivity : AbsToolbarActivity() {
 
         if (Utils.checkIfItsANoelshackImageLink(linkOfImage)) {
             Utils.putStringInClipboard(this, linkOfImage)
-            Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.linkCopied, Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, R.string.invalid_link, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -55,10 +56,10 @@ class MainActivity : AbsToolbarActivity() {
     private fun startUploadThisImage(uri: Uri?) {
         if (uri != null) {
             if (!_uploadViewModel.startUploadThisImage(uri)) {
-                Toast.makeText(this, R.string.upload_already_running, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.errorUploadAlreadyRunning, Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(this, R.string.invalid_file, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.errorFileIsInvalid, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -108,16 +109,25 @@ class MainActivity : AbsToolbarActivity() {
                         when (historyEntryChange.changeType) {
                             HistoryEntryRepository.HistoryEntryChangeType.NEW -> {
                                 _adapterForHistory.notifyItemInserted(historyEntryChange.changeIndex)
-                                binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+                                binding.uploadhistoryListHistory.smoothScrollToPosition(_adapterForHistory.itemCount - 1)
                             }
                             HistoryEntryRepository.HistoryEntryChangeType.DELETED -> {
                                 _adapterForHistory.notifyItemRemoved(historyEntryChange.changeIndex)
                             }
                             HistoryEntryRepository.HistoryEntryChangeType.CHANGED -> {
                                 _adapterForHistory.notifyItemChanged(historyEntryChange.changeIndex)
-                            }
-                            HistoryEntryRepository.HistoryEntryChangeType.FINISHED -> {
-                                _adapterForHistory.notifyItemChanged(historyEntryChange.changeIndex)
+                                if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.FINISHED) {
+                                    itemInHistoryListClicked(historyEntryChange.newHistoryEntry)
+                                } else if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.ERROR) {
+                                    Toast.makeText(
+                                        this,
+                                        getString(
+                                            R.string.errorMessage,
+                                            historyEntryChange.newHistoryEntry.uploadStatusMessage
+                                        ),
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
                             }
                         }
                     }
@@ -163,7 +173,7 @@ class MainActivity : AbsToolbarActivity() {
         try {
             startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
         } catch (e: Exception) {
-            Toast.makeText(this, R.string.file_manager_not_found, Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.errorFileManagerNotFound, Toast.LENGTH_LONG).show()
         }
     }
 }

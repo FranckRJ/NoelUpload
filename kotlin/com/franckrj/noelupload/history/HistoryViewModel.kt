@@ -36,8 +36,7 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 return false
             }
-            HistoryEntryRepository.HistoryEntryChangeType.CHANGED,
-            HistoryEntryRepository.HistoryEntryChangeType.FINISHED -> {
+            HistoryEntryRepository.HistoryEntryChangeType.CHANGED -> {
                 if (historyEntryChange.changeIndex in (0 until _listOfHistoryEntries.size)) {
                     _listOfHistoryEntries[historyEntryChange.changeIndex] = historyEntryChange.newHistoryEntry
                     return true

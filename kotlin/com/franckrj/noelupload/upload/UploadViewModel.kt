@@ -132,7 +132,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         val responseString: String? = client.newCall(request).execute().body()?.string()
 
         if (responseString.isNullOrEmpty()) {
-            throw Exception(app.getString(R.string.errorMessage, null.toString()))
+            throw Exception(null.toString())
         } else {
             return responseString
         }
@@ -157,7 +157,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 throw Exception(uploadResponse)
             }
         } else {
-            throw Exception(app.getString(R.string.invalid_file))
+            throw Exception(app.getString(R.string.fileIsInvalid))
         }
     }
 
