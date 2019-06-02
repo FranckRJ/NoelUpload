@@ -15,6 +15,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 
+/**
+ * Le repo qui gère l'historique et sa synchronisation avec la DB.
+ */
 class HistoryEntryRepository private constructor(private val appContext: Context) {
     companion object {
         private lateinit var instance: HistoryEntryRepository
@@ -33,6 +36,9 @@ class HistoryEntryRepository private constructor(private val appContext: Context
     private val _listOfHistoryEntriesChanges: SafeMutableLiveData<MutableList<HistoryEntryChangeInfos>> =
         SafeMutableLiveData(mutableListOf())
 
+    /**
+     * Une liste des changements qui doivent être approtés à la copie de l'historique.
+     */
     val listOfHistoryEntriesChanges: SafeLiveData<out List<HistoryEntryChangeInfos>> = _listOfHistoryEntriesChanges
 
     init {
@@ -43,10 +49,17 @@ class HistoryEntryRepository private constructor(private val appContext: Context
         }
     }
 
+    /**
+     * Retourne le fichier de la preview d'une entrée de l'historique.
+     */
     private fun getPreviewFileFromUploadInfos(uploadInfos: UploadInfos): File {
         return File("${appContext.filesDir.path}/${uploadInfos.uploadTimeInMs}-${uploadInfos.imageName}")
     }
 
+    /**
+     * Convertis un [UploadInfos] en un [HistoryEntryInfos] en prenant en compte le fait qu'il vient de la DB ou d'un
+     * nouvel upload.
+     */
     private fun uploadInfosToHistoryEntry(uploadInfos: UploadInfos, fromDatabase: Boolean): HistoryEntryInfos {
         //todo faire les file.exists sur un background thread ?
         val previewFile = getPreviewFileFromUploadInfos(uploadInfos)
@@ -67,17 +80,24 @@ class HistoryEntryRepository private constructor(private val appContext: Context
         )
     }
 
+    /**
+     * Retourne l'index dans la [_listOfHistoryEntriesChanges] de l'élement qui représente l'[uploadInfos] ou -1 s'il
+     * n'existe pas.
+     */
     private fun getIndexOfUploadInfosInList(uploadInfos: UploadInfos?): Int {
         val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.lastOrNull()
 
         if (uploadInfos != null && historyEntry != null) {
             if (uploadInfos.imageUri == historyEntry.imageUri && uploadInfos.uploadTimeInMs == historyEntry.uploadTimeInMs) {
-                return _listOfHistoryEntries.size - 1
+                return _listOfHistoryEntries.lastIndex
             }
         }
         return -1
     }
 
+    /**
+     * Retourne une copie de la [_listOfHistoryEntries] actuelle et reset la [listOfHistoryEntriesChanges].
+     */
     fun getACopyOfListOfHistoryEntries(): MutableList<HistoryEntryInfos> {
         val newListOfHistoryEntries: MutableList<HistoryEntryInfos> = mutableListOf()
         _listOfHistoryEntries.mapTo(newListOfHistoryEntries) { historyEntry: HistoryEntryInfos ->
@@ -87,12 +107,19 @@ class HistoryEntryRepository private constructor(private val appContext: Context
         return newListOfHistoryEntries
     }
 
+    /**
+     * Supprime le 1er élement de la [listOfHistoryEntriesChanges] si elle n'est pas vide.
+     */
     fun removeFirstHistoryEntryChange() {
         if (_listOfHistoryEntries.isNotEmpty()) {
             _listOfHistoryEntriesChanges.value.removeAt(0)
         }
     }
 
+    /**
+     * Met à jour le statut de l'entrée de [_listOfHistoryEntries] correspondant au [uploadInfos] sur le main thread
+     * et dispatch les modifications.
+     */
     fun postUpdateThisUploadInfosStatus(uploadInfos: UploadInfos?, newStatus: UploadStatus, newStatusMessage: String) =
         GlobalScope.launch(Dispatchers.Main) {
             val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
@@ -113,6 +140,10 @@ class HistoryEntryRepository private constructor(private val appContext: Context
             }
         }
 
+    /**
+     * Passe le statut à [UploadStatus.FINISHED] et met à jour le lien de l'image de l'entrée de [_listOfHistoryEntries]
+     * correspondant au [uploadInfos] sur le main thread et dispatch les modifications.
+     */
     fun postUpdateThisUploadInfosLinkAndSetFinished(uploadInfos: UploadInfos?, newLink: String) =
         GlobalScope.launch(Dispatchers.Main) {
             val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
@@ -145,6 +176,10 @@ class HistoryEntryRepository private constructor(private val appContext: Context
             }
         }
 
+    /**
+     * Met à jour les infos sur la preview de l'entrée de [_listOfHistoryEntries] correspondant au [uploadInfos] sur
+     * le main thread et dispatch les modifications.
+     */
     fun postUpdateThisUploadInfosPreview(uploadInfos: UploadInfos?) =
         GlobalScope.launch(Dispatchers.Main) {
             val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
@@ -167,6 +202,10 @@ class HistoryEntryRepository private constructor(private val appContext: Context
             }
         }
 
+    /**
+     * Ajoute une nouvelle entrée dans [_listOfHistoryEntries] correspondant au [uploadInfos] sur le main thread et
+     * dispatch les modifications.
+     */
     fun postAddThisUploadInfos(uploadInfos: UploadInfos?) =
         GlobalScope.launch(Dispatchers.Main) {
             if (uploadInfos != null) {
@@ -178,13 +217,16 @@ class HistoryEntryRepository private constructor(private val appContext: Context
                     HistoryEntryChangeInfos(
                         _listOfHistoryEntries.last().copy(),
                         HistoryEntryChangeType.NEW,
-                        _listOfHistoryEntries.size - 1
+                        _listOfHistoryEntries.lastIndex
                     )
                 )
                 _listOfHistoryEntriesChanges.updateValue()
             }
         }
 
+    /**
+     * Type d'un changement dans [_listOfHistoryEntries].
+     */
     enum class HistoryEntryChangeType {
         NEW,
         DELETED,
@@ -192,6 +234,9 @@ class HistoryEntryRepository private constructor(private val appContext: Context
         FINISHED
     }
 
+    /**
+     * Détails sur un changemenbt dans [_listOfHistoryEntries].
+     */
     data class HistoryEntryChangeInfos(
         val newHistoryEntry: HistoryEntryInfos,
         val changeType: HistoryEntryChangeType,

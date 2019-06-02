@@ -1,5 +1,8 @@
 package com.franckrj.noelupload.utils
 
+/**
+ * Une [SafeLiveData] mutable.
+ */
 class SafeMutableLiveData<T : Any>(newVal: T) : SafeLiveData<T>(newVal) {
     public override fun postValue(value: T) {
         super.postValue(value)

@@ -16,6 +16,10 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
     val listOfHistoryEntriesChanges: SafeLiveData<out List<HistoryEntryRepository.HistoryEntryChangeInfos>> =
         _historyEntryRepo.listOfHistoryEntriesChanges
 
+    /**
+     * Applique le changement [historyEntryChange] à la liste [_listOfHistoryEntries] s'il est valide.
+     * Retourne vrai si le changement est valide, faux s'il est invalide.
+     */
     fun applyHistoryChange(historyEntryChange: HistoryEntryRepository.HistoryEntryChangeInfos): Boolean {
         when (historyEntryChange.changeType) {
             HistoryEntryRepository.HistoryEntryChangeType.NEW -> {
@@ -43,6 +47,9 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Supprime le 1er élement de la [listOfHistoryEntriesChanges] si elle n'est pas vide.
+     */
     fun removeFirstHistoryEntryChange() {
         _historyEntryRepo.removeFirstHistoryEntryChange()
     }
