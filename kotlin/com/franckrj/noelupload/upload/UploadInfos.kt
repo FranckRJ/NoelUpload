@@ -17,11 +17,7 @@ data class UploadInfos(
     val imageName: String,
     val imageUri: String,
     val uploadTimeInMs: Long
-) {
-    companion object {
-        val DUMB = UploadInfos("", "", "", -1)
-    }
-}
+)
 
 /**
  * Enum représentant le statut d'un upload.

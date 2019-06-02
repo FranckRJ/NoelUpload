@@ -16,7 +16,8 @@ import java.io.IOException
 class ProgressRequestBody(
     private val contentType: MediaType?,
     private val content: ByteArray,
-    private val listenerForProgress: (bytesSended: Long, totalBytesToSend: Long) -> Any?
+    private val linkedUploadInfos: UploadInfos,
+    private val listenerForProgress: (bytesSended: Long, totalBytesToSend: Long, linkedUploadInfos: UploadInfos) -> Any?
 ) : RequestBody() {
     companion object {
         private const val SEGMENT_SIZE: Long = 2048 // okio.Segment.SIZE
@@ -48,7 +49,7 @@ class ProgressRequestBody(
             while (read != -1L) {
                 total += read
                 sink.flush()
-                listenerForProgress(total, contentLength())
+                listenerForProgress(total, contentLength(), linkedUploadInfos)
                 read = source.read(sink.buffer(), SEGMENT_SIZE)
             }
         } finally {

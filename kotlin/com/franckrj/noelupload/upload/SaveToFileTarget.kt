@@ -17,9 +17,8 @@ class SaveToFileTarget(
     private val maxWidth: Int,
     private val maxHeight: Int,
     private val linkedUploadInfos: UploadInfos,
-    var onFinishCallBack: ((SaveToFileTarget, UploadInfos) -> Any?)?
-) :
-    CustomTarget<Bitmap>() {
+    var onFinishCallBack: ((target: SaveToFileTarget, linkedUploadInfos: UploadInfos) -> Any?)?
+) : CustomTarget<Bitmap>() {
     /**
      * Retourne une nouvelle [Bitmap] redimensionnée (ou la même si pas besoin).
      */

@@ -21,6 +21,7 @@ import com.franckrj.noelupload.R
 import com.franckrj.noelupload.utils.Utils
 import com.franckrj.noelupload.history.HistoryEntryRepository
 import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicBoolean
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
 //todo mais est-ce vraiment utile de save des trucs si l'upload échoue à cause du manque de mémoire ?
@@ -33,7 +34,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private var _listOfCurrentTargets: MutableList<SaveToFileTarget> = mutableListOf()
 
-    private var _currUploadInfos: UploadInfos? = null
+    private var _isUploading: AtomicBoolean = AtomicBoolean(false)
 
     /**
      * Retourne le nom du fichier pointé par [uri] via le [ContentResolver]. S'il n'est pas trouvé retourne
@@ -98,10 +99,9 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
      * de progression de la requête.
      */
-    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long) {
-        //todo ne plus utiliser _currUploadInfos mais le passer en paramètre de la fonction ?
+    private fun uploadProgressChanged(bytesSended: Long, totalBytesToSend: Long, linkedUploadInfos: UploadInfos) {
         _historyEntryRepo.postUpdateThisUploadInfosStatus(
-            _currUploadInfos,
+            linkedUploadInfos,
             UploadStatus.UPLOADING,
             ((bytesSended * 100) / totalBytesToSend).toString()
         )
@@ -112,12 +112,12 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * La fonction doit être appelée dans un background thread.
      */
     @Suppress("RedundantSuspendModifier")
-    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileName: String, fileType: String): String {
+    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileType: String, imageUploadInfos: UploadInfos): String {
         val mediaTypeForFile = MediaType.parse(fileType)
         val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
             "fichier",
-            fileName,
-            ProgressRequestBody(mediaTypeForFile, fileContent, ::uploadProgressChanged)
+            imageUploadInfos.imageName,
+            ProgressRequestBody(mediaTypeForFile, fileContent, imageUploadInfos, ::uploadProgressChanged)
         ).build()
         val request = Request.Builder()
             .url("http://www.noelshack.com/api.php")
@@ -147,8 +147,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         return if (fileContent != null) {
             val uploadResponse: String = uploadBitmapImage(
                 fileContent.toByteArray(),
-                imageUploadInfos.imageName,
-                app.contentResolver.getType(imageUri) ?: "image/*"
+                app.contentResolver.getType(imageUri) ?: "image/*",
+                imageUploadInfos
             )
 
             if (Utils.checkIfItsANoelshackImageLink(uploadResponse)) {
@@ -190,9 +190,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
      */
     fun startUploadThisImage(newImageUri: Uri): Boolean {
-        if (_currUploadInfos == null) {
-            _currUploadInfos = UploadInfos.DUMB
-
+        if (!_isUploading.getAndSet(true)) {
             viewModelScope.launch(Dispatchers.IO) {
                 val newUploadInfos = UploadInfos(
                     "",
@@ -200,7 +198,6 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                     newImageUri.path.orEmpty(),
                     System.currentTimeMillis()
                 )
-                _currUploadInfos = newUploadInfos
 
                 _historyEntryRepo.postAddThisUploadInfos(newUploadInfos)
 
@@ -231,7 +228,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                         e.message.toString()
                     )
                 } finally {
-                    _currUploadInfos = null
+                    _isUploading.set(false)
                 }
             }
 
