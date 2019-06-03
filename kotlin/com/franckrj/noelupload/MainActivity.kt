@@ -2,6 +2,7 @@ package com.franckrj.noelupload
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Point
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.upload.UploadStatus
 import com.franckrj.noelupload.utils.Utils
+import android.view.Display
 
 /**
  * Activité principale pour consulter l'historique des uploads et upload des nouvelles images.
@@ -34,6 +36,17 @@ class MainActivity : AbsToolbarActivity() {
     private lateinit var _historyViewModel: HistoryViewModel
     private lateinit var _uploadViewModel: UploadViewModel
     private val _adapterForHistory = HistoryListAdapter()
+
+    private fun computeNumberOfColumnToShow(): Int {
+        val minPreviewWidth: Int = resources.getDimensionPixelSize(R.dimen.minPreviewSize)
+        val previewCardMargin: Int = resources.getDimensionPixelSize(R.dimen.historyCardMargin)
+        val minPreviewCardWidth: Int = minPreviewWidth + (previewCardMargin * 2)
+        val display: Display = windowManager.defaultDisplay
+        val size = Point()
+
+        display.getSize(size)
+        return (size.x / minPreviewCardWidth).coerceAtLeast(1)
+    }
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
@@ -94,7 +107,7 @@ class MainActivity : AbsToolbarActivity() {
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
         _adapterForHistory.notifyDataSetChanged()
 
-        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, 3)
+        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, computeNumberOfColumnToShow())
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
         (binding.uploadhistoryListHistory.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
 

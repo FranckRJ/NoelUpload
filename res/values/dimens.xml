@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="maxPreviewWidth">256dp</dimen>
-    <dimen name="maxPreviewHeight">256dp</dimen>
+    <dimen name="maxPreviewWidth">216dp</dimen>
+    <dimen name="maxPreviewHeight">216dp</dimen>
+    <dimen name="minPreviewSize">108dp</dimen>
+    <dimen name="historyCardMargin">6dp</dimen>
 </resources>
