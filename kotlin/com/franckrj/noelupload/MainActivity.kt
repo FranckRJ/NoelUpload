@@ -28,7 +28,7 @@ import android.view.Display
 class MainActivity : AbsToolbarActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
-        private const val ACTION_PICK_IMAGE: String = "com.franckrj.noelupload.PICK_IMAGE"
+        private const val ACTION_UPLOAD_IMAGE: String = "com.franckrj.noelupload.UPLOAD_IMAGE"
     }
 
     //private val uploadViewModel: UploadViewModel by viewModels()
@@ -86,7 +86,7 @@ class MainActivity : AbsToolbarActivity() {
                 val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
                 startUploadThisImage(newUri)
-            } else if (currIntent.action == ACTION_PICK_IMAGE) {
+            } else if (currIntent.action == ACTION_UPLOAD_IMAGE) {
                 pickAnImage()
             }
         }
