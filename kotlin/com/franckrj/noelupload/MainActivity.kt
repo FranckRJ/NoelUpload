@@ -38,7 +38,7 @@ class MainActivity : AbsToolbarActivity() {
     private val _adapterForHistory = HistoryListAdapter()
 
     private fun computeNumberOfColumnToShow(): Int {
-        val minPreviewWidth: Int = resources.getDimensionPixelSize(R.dimen.minPreviewSize)
+        val minPreviewWidth: Int = resources.getDimensionPixelSize(R.dimen.minPreviewWidth)
         val previewCardMargin: Int = resources.getDimensionPixelSize(R.dimen.historyCardMargin)
         val minPreviewCardWidth: Int = minPreviewWidth + (previewCardMargin * 2)
         val display: Display = windowManager.defaultDisplay

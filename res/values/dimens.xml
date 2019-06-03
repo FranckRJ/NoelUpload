@@ -2,6 +2,6 @@
 <resources>
     <dimen name="maxPreviewWidth">216dp</dimen>
     <dimen name="maxPreviewHeight">216dp</dimen>
-    <dimen name="minPreviewSize">108dp</dimen>
+    <dimen name="minPreviewWidth">108dp</dimen>
     <dimen name="historyCardMargin">6dp</dimen>
 </resources>

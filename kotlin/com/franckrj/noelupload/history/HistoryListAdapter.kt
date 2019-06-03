@@ -71,19 +71,19 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
             if (historyEntry.fileForPreview != null || historyEntry.fallbackPreviewUrl.isNotEmpty()) {
                 Glide.with(mainView.context)
                     .load(historyEntry.fileForPreview ?: historyEntry.fallbackPreviewUrl)
-                    .placeholder(R.drawable.ic_file_downloading_white_24dp)
+                    .placeholder(R.drawable.ic_file_downloading_white_108dp)
                     .error(
                         if (historyEntry.imageBaseLink.isEmpty()) {
-                            R.drawable.ic_file_downloading_white_24dp
+                            R.drawable.ic_file_downloading_white_108dp
                         } else {
-                            R.drawable.ic_file_download_failed_white_24dp
+                            R.drawable.ic_file_download_failed_white_108dp
                         }
                     )
                     .centerCrop()
                     .into(_imagePreview)
             } else {
                 Glide.with(mainView.context)
-                    .load(R.drawable.ic_file_downloading_white_24dp)
+                    .load(R.drawable.ic_file_downloading_white_108dp)
                     .centerCrop()
                     .into(_imagePreview)
             }
