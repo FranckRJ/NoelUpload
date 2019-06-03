@@ -3,10 +3,10 @@
     <color name="ic_upload_image_shortcut_background">#292929</color>
     <color name="colorPrimary">#222222</color>
     <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorPrimaryDark">#000000</color>
-    <color name="colorSecondary">#C62828</color>
-    <color name="colorOnSecondary">#FFFFFF</color>
-    <color name="colorSurface">#121212</color>
+    <color name="colorPrimaryDark">#0C0A10</color>
+    <color name="colorSecondary">#DFCCFF</color>
+    <color name="colorOnSecondary">#000000</color>
+    <color name="colorSurface">#2B2339</color>
     <color name="colorElevate">#1e1e1e</color>
     <color name="colorControlHighlight">#757575</color>
     <color name="colorTransparentBackgroundNormal">#BB222222</color>
