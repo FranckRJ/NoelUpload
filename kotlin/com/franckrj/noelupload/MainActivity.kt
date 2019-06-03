@@ -6,7 +6,6 @@ import android.graphics.Point
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -21,11 +20,12 @@ import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.upload.UploadStatus
 import com.franckrj.noelupload.utils.Utils
 import android.view.Display
+import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Activité principale pour consulter l'historique des uploads et upload des nouvelles images.
  */
-class MainActivity : AbsToolbarActivity() {
+class MainActivity : AppCompatActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
         private const val ACTION_UPLOAD_IMAGE: String = "com.franckrj.noelupload.UPLOAD_IMAGE"
@@ -100,8 +100,6 @@ class MainActivity : AbsToolbarActivity() {
         _uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
-
-        initToolbar(binding.toolbarHistory as Toolbar, homeIsBack = false, displayHome = false)
 
         _adapterForHistory.listOfHistoryEntries = _historyViewModel.listOfHistoryEntries
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
