@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * ViewModel contenant les diverses informations pour upload un fichier.
  */
 class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
-    private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.getInstance(app)
+    private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private var _listOfCurrentTargets: MutableList<SaveToFileTarget> = mutableListOf()

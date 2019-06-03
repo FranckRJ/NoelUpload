@@ -1,14 +1,13 @@
 package com.franckrj.noelupload.history
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import com.franckrj.noelupload.utils.SafeLiveData
 
 /**
  * ViewModel contenant les diverses informations sur l'historique des uploads.
  */
-class HistoryViewModel(app: Application) : AndroidViewModel(app) {
-    private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.getInstance(app)
+class HistoryViewModel : ViewModel() {
+    private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private val _listOfHistoryEntries: MutableList<HistoryEntryInfos> =
         _historyEntryRepo.getACopyOfListOfHistoryEntries()
 

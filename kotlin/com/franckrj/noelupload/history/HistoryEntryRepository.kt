@@ -20,14 +20,10 @@ import java.io.File
  */
 class HistoryEntryRepository private constructor(private val appContext: Context) {
     companion object {
-        private lateinit var instance: HistoryEntryRepository
+        lateinit var instance: HistoryEntryRepository
 
-        fun getInstance(newAppContext: Context): HistoryEntryRepository {
-            if (!::instance.isInitialized) {
-                instance = HistoryEntryRepository(newAppContext)
-            }
-
-            return instance
+        fun initRepository(newAppContext: Context) {
+            instance = HistoryEntryRepository(newAppContext)
         }
     }
 
