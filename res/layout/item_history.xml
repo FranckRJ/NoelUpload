@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.franckrj.noelupload.history.FixedGlobaleHeightRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_layout_history_item"
     android:layout_width="wrap_content"
@@ -46,4 +46,4 @@
         android:indeterminateTintMode="src_in"
         android:progressTint="@android:color/white" />
 
-</com.franckrj.noelupload.history.FixedGlobaleHeightRelativeLayout>
+</com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout>

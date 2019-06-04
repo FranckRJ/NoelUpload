@@ -21,7 +21,7 @@ import com.franckrj.noelupload.upload.UploadStatus
 import com.franckrj.noelupload.utils.Utils
 import android.view.Display
 import androidx.appcompat.app.AppCompatActivity
-import com.franckrj.noelupload.history.FixedGlobaleHeightRelativeLayout
+import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
 
 /**
  * Activité principale pour consulter l'historique des uploads et upload des nouvelles images.
@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         binding.lifecycleOwner = this
         binding.activity = this
 
-        FixedGlobaleHeightRelativeLayout.fixedHeightInPixel = computeHeightOfItems(numberOfColumnsToShow)
+        FixedGlobalHeightRelativeLayout.fixedHeightInPixel = computeHeightOfItems(numberOfColumnsToShow)
         _adapterForHistory.listOfHistoryEntries = _historyViewModel.listOfHistoryEntries
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
         _adapterForHistory.notifyDataSetChanged()

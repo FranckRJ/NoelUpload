@@ -7,7 +7,7 @@ import android.widget.RelativeLayout
 /**
  * Un RelativeLayout dont la hauteur est fixée selon une variable statique.
  */
-class FixedGlobaleHeightRelativeLayout : RelativeLayout {
+class FixedGlobalHeightRelativeLayout : RelativeLayout {
     companion object {
         var fixedHeightInPixel: Int = 1
     }
