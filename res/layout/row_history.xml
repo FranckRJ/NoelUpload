@@ -6,7 +6,8 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:layout_margin="@dimen/historyCardMargin"
-    app:cardCornerRadius="4dp">
+    app:cardCornerRadius="0dp"
+    app:cardElevation="0dp">
 
     <com.franckrj.noelupload.SquareRelativeLayout
         android:layout_width="match_parent"
