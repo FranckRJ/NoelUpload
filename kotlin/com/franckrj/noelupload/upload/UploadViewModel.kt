@@ -1,14 +1,14 @@
 package com.franckrj.noelupload.upload
 
 import android.app.Application
-import android.content.ContentResolver
-import android.database.Cursor
 import android.location.Location
 import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.franckrj.noelupload.R
+import com.franckrj.noelupload.history.HistoryEntryRepository
+import com.franckrj.noelupload.utils.Utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -16,17 +16,10 @@ import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.TimeUnit
-import com.bumptech.glide.Glide
-import com.franckrj.noelupload.R
-import com.franckrj.noelupload.utils.Utils
-import com.franckrj.noelupload.history.HistoryEntryRepository
-import kotlinx.coroutines.delay
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
 //todo mais est-ce vraiment utile de save des trucs si l'upload échoue à cause du manque de mémoire ?
@@ -37,93 +30,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
-    private var _listOfCurrentTargets: MutableList<SaveToFileTarget> = mutableListOf()
 
     private var _isUploading: AtomicBoolean = AtomicBoolean(false)
-
-    /**
-     * Retourne le nom du fichier pointé par [uri] via le [ContentResolver]. S'il n'est pas trouvé retourne
-     * simplement la dernière partie de [uri].
-     */
-    private fun getFileName(uri: Uri): String {
-        var result: String? = null
-
-        if (uri.scheme == "content") {
-            val queryCursor: Cursor? = app.contentResolver.query(
-                uri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null
-            )
-            result = queryCursor?.use { cursor: Cursor ->
-                if (cursor.moveToFirst()) {
-                    cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
-                } else {
-                    null
-                }
-            }
-        }
-
-        if (result == null) {
-            result = uri.path
-            if (result != null) {
-                val cut = result.lastIndexOf('/')
-                if (cut != -1) {
-                    result = result.substring(cut + 1)
-                }
-            } else {
-                result = uri.toString()
-            }
-        }
-
-        return result
-    }
-
-    /**
-     * Retourne un [ByteArrayOutputStream] avec le contenu du [fileToRead], ou null en cas d'erreur.
-     */
-    private suspend fun readFileContent(fileToRead: File): ByteArrayOutputStream? = withContext(Dispatchers.IO) {
-        try {
-            FileInputStream(fileToRead).use { inputStream ->
-                val outputStreamResult = ByteArrayOutputStream()
-                val buffer = ByteArray(8192)
-
-                var length = inputStream.read(buffer)
-                while (length != -1) {
-                    outputStreamResult.write(buffer, 0, length)
-                    length = inputStream.read(buffer)
-                }
-                outputStreamResult
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Sauvegarde le contenu de [uriToSave] dans le fichier [destinationFile]. Retourne true en cas de succes et false
-     * si une erreur a eu lieu.
-     */
-    private suspend fun saveUriContentToFile(uriToSave: Uri, destinationFile: File): Boolean =
-        withContext(Dispatchers.IO) {
-            try {
-                app.contentResolver.openInputStream(uriToSave)?.use { inputStream ->
-                    FileOutputStream(destinationFile, false).use { outputFile ->
-                        val buffer = ByteArray(8192)
-
-                        var length = inputStream.read(buffer)
-                        while (length != -1) {
-                            outputFile.write(buffer, 0, length)
-                            length = inputStream.read(buffer)
-                        }
-                    }
-                }
-                true
-            } catch (e: Exception) {
-                false
-            }
-        }
 
     /**
      * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
@@ -172,7 +80,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Upload l'image passée en paramètre et retourne son lien noelshack ou throw en cas d'erreur.
      */
     private suspend fun uploadThisImage(imageFile: File, fileType: String?, uploadInfos: UploadInfos): String {
-        val fileContent = readFileContent(imageFile)
+        val fileContent = FileUriUtils.readFileContent(imageFile)
 
         return if (fileContent != null) {
             val uploadResponse: String = uploadBitmapImage(
@@ -192,40 +100,22 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Callback executé lorsqu'une miniature a terminée d'être construite.
+     * Lance dans un background thread la création d'une miniature pour l'image représentée par [baseUri] et [uploadInfos].
+     * Met à jour la DB lorsque la création de la preview est terminée.
      */
-    private fun targetFinished(target: SaveToFileTarget, linkedUploadInfos: UploadInfos) {
-        target.onFinishCallBack = null
-        _listOfCurrentTargets.remove(target)
-
-        _historyEntryRepo.postUpdateThisUploadInfosPreview(linkedUploadInfos)
-
-        //todo c'est potentiellement pas propre, checker pour faire mieux ?
-        viewModelScope.launch {
-            delay(10)
-            Glide.with(app).clear(target)
-        }
-    }
-
-    /**
-     * Créé une preview pour l'[uploadInfos].
-     */
-    private suspend fun createPreviewForThisUploadInfos(uploadInfos: UploadInfos) = withContext(Dispatchers.Main) {
-        _listOfCurrentTargets.add(
-            Glide.with(app)
-                .asBitmap()
-                .load(uploadInfos.imageUri)
-                .into(
-                    SaveToFileTarget(
-                        _historyEntryRepo.getPreviewFileFromUploadInfos(uploadInfos),
-                        _maxPreviewWidth,
-                        _maxPreviewHeight,
-                        uploadInfos,
-                        ::targetFinished
-                    )
+    private suspend fun postCreatePreviewForThisUploadInfos(baseUri: Uri, uploadInfos: UploadInfos) =
+        viewModelScope.launch(Dispatchers.IO) {
+            if (FileUriUtils.savePreviewOfUriToFile(
+                    baseUri,
+                    _historyEntryRepo.getPreviewFileFromUploadInfos(uploadInfos),
+                    (_maxPreviewWidth * 1.5).roundToInt(),
+                    (_maxPreviewHeight * 1.5).roundToInt(),
+                    app
                 )
-        )
-    }
+            ) {
+                _historyEntryRepo.postUpdateThisUploadInfosPreview(uploadInfos)
+            }
+        }
 
     /**
      * Retourne une copie du fichier représenté par [baseUri]. Si cette copie possède des données EXIF les tags de GPS
@@ -237,7 +127,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             val cachedFile =
                 File("${app.cacheDir.path}/file-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}.nop")
 
-            if (!saveUriContentToFile(baseUri, cachedFile)) {
+            if (!FileUriUtils.saveUriContentToFile(baseUri, cachedFile, app)) {
                 throw Exception(app.getString(R.string.errorUploadFailed))
             }
 
@@ -270,14 +160,6 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             cachedFile
         }
 
-    override fun onCleared() {
-        for (target in _listOfCurrentTargets) {
-            target.onFinishCallBack = null
-        }
-        _listOfCurrentTargets.clear()
-        super.onCleared()
-    }
-
     /**
      * Initialise des trucs pour ajouter l'image pointée par [newImageUri] à l'historique et lance son upload.
      * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
@@ -287,13 +169,13 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             viewModelScope.launch(Dispatchers.IO) {
                 val newUploadInfos = UploadInfos(
                     "",
-                    getFileName(newImageUri),
+                    FileUriUtils.getFileName(newImageUri, app),
                     newImageUri.toString(),
                     System.currentTimeMillis()
                 )
 
                 _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
-                createPreviewForThisUploadInfos(newUploadInfos)
+                postCreatePreviewForThisUploadInfos(newImageUri, newUploadInfos)
 
                 try {
                     val fileToUpload = createCachedFileForUpload(newImageUri, newUploadInfos)
