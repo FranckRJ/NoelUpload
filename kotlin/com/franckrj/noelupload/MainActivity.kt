@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         val size = Point()
 
         display.getSize(size)
-        return (size.x / minPreviewCardWidth).coerceAtLeast(1)
+        return ((size.x - (previewCardMargin * 2)) / minPreviewCardWidth).coerceAtLeast(1)
     }
 
     /**
