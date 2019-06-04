@@ -138,7 +138,7 @@ object FileUriUtils {
 
                 context.contentResolver.openInputStream(uriToUse)!!.use { inputStream ->
                     bitmapOption.inJustDecodeBounds = true
-                    BitmapFactory.decodeStream(inputStream, null, bitmapOption)!!
+                    BitmapFactory.decodeStream(inputStream, null, bitmapOption)
                 }
                 previewBitmap = context.contentResolver.openInputStream(uriToUse)!!.use { inputStream ->
                     bitmapOption.inJustDecodeBounds = false
