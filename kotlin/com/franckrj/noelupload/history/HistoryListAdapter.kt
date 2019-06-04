@@ -30,7 +30,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder =
         HistoryViewHolder(
-            LayoutInflater.from(parent.context).inflate(R.layout.row_history, parent, false),
+            LayoutInflater.from(parent.context).inflate(R.layout.item_history, parent, false),
             ::itemInListClicked
         )
 
@@ -45,12 +45,12 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
     /**
      * ViewHolder pour un [HistoryEntryInfos].
      */
-    class HistoryViewHolder(private val mainView: View, private val clickCallback: (Int) -> Any?) :
+    class HistoryViewHolder(private val mainView: View, clickCallback: (Int) -> Any?) :
         RecyclerView.ViewHolder(mainView) {
-        private val _imagePreview: ImageView = mainView.findViewById(R.id.imagepreview_image_history_row)
-        private val _infoBackground: View = mainView.findViewById(R.id.background_info_view_history_row)
-        private val _errorText: TextView = mainView.findViewById(R.id.error_text_history_row)
-        private val _uploadProgress: ProgressBar = mainView.findViewById(R.id.upload_progress_history_row)
+        private val _imagePreview: ImageView = mainView.findViewById(R.id.imagepreview_image_history_item)
+        private val _infoBackground: View = mainView.findViewById(R.id.background_info_view_history_item)
+        private val _errorText: TextView = mainView.findViewById(R.id.error_text_history_item)
+        private val _uploadProgress: ProgressBar = mainView.findViewById(R.id.upload_progress_history_item)
 
         init {
             mainView.setOnClickListener { view: View? -> clickCallback(view?.tag as? Int ?: -1) }

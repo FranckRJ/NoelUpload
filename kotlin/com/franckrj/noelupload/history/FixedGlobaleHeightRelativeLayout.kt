@@ -1,13 +1,16 @@
-package com.franckrj.noelupload
+package com.franckrj.noelupload.history
 
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.RelativeLayout
 
 /**
- * Un RelativeLayout dont la largeur et la hauteur est toujours égale à la largeur imposée par le parent.
+ * Un RelativeLayout dont la hauteur est fixée selon une variable statique.
  */
-class SquareRelativeLayout : RelativeLayout {
+class FixedGlobaleHeightRelativeLayout : RelativeLayout {
+    companion object {
+        var fixedHeightInPixel: Int = 1
+    }
 
     constructor(context: Context) : super(context)
 
@@ -23,6 +26,6 @@ class SquareRelativeLayout : RelativeLayout {
     )
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(fixedHeightInPixel, MeasureSpec.EXACTLY))
     }
 }
