@@ -2,7 +2,6 @@ package com.franckrj.noelupload
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Point
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -19,7 +18,6 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.upload.UploadStatus
 import com.franckrj.noelupload.utils.Utils
-import android.view.Display
 import androidx.appcompat.app.AppCompatActivity
 import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
 
@@ -37,33 +35,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var _historyViewModel: HistoryViewModel
     private lateinit var _uploadViewModel: UploadViewModel
     private val _adapterForHistory = HistoryListAdapter()
-
-    /**
-     * Retourne le nombre de colonnes à afficher pour afficher le plus de miniatures tout en respectant la taille
-     * minimale de [R.dimen.minPreviewWidth].
-     */
-    private fun computeNumberOfColumnsToShow(): Int {
-        val minPreviewWidth: Int = resources.getDimensionPixelSize(R.dimen.minPreviewWidth)
-        val previewCardMargin: Int = resources.getDimensionPixelSize(R.dimen.historyCardMargin)
-        val minPreviewCardWidth: Int = minPreviewWidth + (previewCardMargin * 2)
-        val display: Display = windowManager.defaultDisplay
-        val size = Point()
-
-        display.getSize(size)
-        return ((size.x - (previewCardMargin * 2)) / minPreviewCardWidth).coerceAtLeast(1)
-    }
-
-    /**
-     * Retourne la taille d'une miniature, calculée via le nombre de colonnes [numberOfColumns].
-     */
-    private fun computeHeightOfItems(numberOfColumns: Int): Int {
-        val previewCardAllMargins: Int = (resources.getDimensionPixelSize(R.dimen.historyCardMargin) * 2)
-        val display: Display = windowManager.defaultDisplay
-        val size = Point()
-
-        display.getSize(size)
-        return (((size.x - previewCardAllMargins) / numberOfColumns) - previewCardAllMargins).coerceAtLeast(1)
-    }
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
@@ -111,20 +82,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val numberOfColumnsToShow: Int
 
-        val numberOfColumnsToShow: Int = computeNumberOfColumnsToShow()
         val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         _historyViewModel = ViewModelProviders.of(this).get(HistoryViewModel::class.java)
         _uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
 
-        FixedGlobalHeightRelativeLayout.fixedHeightInPixel = computeHeightOfItems(numberOfColumnsToShow)
+        numberOfColumnsToShow = _historyViewModel.computeNumberOfColumnsToShow(windowManager.defaultDisplay)
+        FixedGlobalHeightRelativeLayout.fixedHeightInPixel =
+            _historyViewModel.computeHeightOfItems(numberOfColumnsToShow, windowManager.defaultDisplay)
         _adapterForHistory.listOfHistoryEntries = _historyViewModel.listOfHistoryEntries
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
         _adapterForHistory.notifyDataSetChanged()
 
-        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, computeNumberOfColumnsToShow())
+        binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, numberOfColumnsToShow)
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
         (binding.uploadhistoryListHistory.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
 
