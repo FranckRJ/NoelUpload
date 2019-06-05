@@ -139,7 +139,9 @@ class MainActivity : AppCompatActivity() {
             })
 
         if (savedInstanceState == null) {
-            binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+            if (_adapterForHistory.itemCount > 0) {
+                binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+            }
             consumeIntent(intent)
         }
     }
