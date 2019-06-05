@@ -1,49 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main_layout_history_item"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_margin="@dimen/historyCardMargin">
+    android:layout_height="wrap_content">
 
-    <ImageView
-        android:id="@+id/imagepreview_image_history_item"
+    <com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
+        android:id="@+id/main_layout_history_item"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/imagePreview" />
+        android:layout_margin="@dimen/historyCardMargin">
 
-    <View
-        android:id="@+id/background_info_view_history_item"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_alignTop="@+id/error_text_history_item"
-        android:layout_alignParentBottom="true" />
+        <ImageView
+            android:id="@+id/imagepreview_image_history_item"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/imagePreview"
+            android:scaleType="centerCrop" />
 
-    <TextView
-        android:id="@+id/error_text_history_item"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:ellipsize="end"
-        android:lines="1"
-        android:paddingStart="4dp"
-        android:paddingTop="2dp"
-        android:paddingEnd="4dp"
-        android:paddingBottom="2dp"
-        android:text="@string/error"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        tools:ignore="RelativeOverlap" />
+        <View
+            android:id="@+id/background_info_view_history_item"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_alignTop="@+id/error_text_history_item"
+            android:layout_alignParentBottom="true" />
 
-    <ProgressBar
-        android:id="@+id/upload_progress_history_item"
-        style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:indeterminateTint="@android:color/white"
-        android:indeterminateTintMode="src_in"
-        android:progressTint="@android:color/white" />
+        <TextView
+            android:id="@+id/error_text_history_item"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:ellipsize="end"
+            android:lines="1"
+            android:paddingStart="4dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="2dp"
+            android:text="@string/error"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            tools:ignore="RelativeOverlap" />
 
-</com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout>
+        <ProgressBar
+            android:id="@+id/upload_progress_history_item"
+            style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:indeterminateTint="@android:color/white"
+            android:indeterminateTintMode="src_in"
+            android:progressTint="@android:color/white" />
+
+    </com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout>
+
+</com.google.android.material.card.MaterialCardView>
