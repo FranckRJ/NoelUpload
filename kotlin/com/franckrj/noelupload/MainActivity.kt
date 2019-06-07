@@ -5,9 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
 import com.franckrj.noelupload.databinding.ActivityMainBinding
 import com.franckrj.noelupload.history.HistoryEntryInfos
@@ -30,10 +30,8 @@ class MainActivity : AppCompatActivity() {
         private const val ACTION_UPLOAD_IMAGE: String = "com.franckrj.noelupload.UPLOAD_IMAGE"
     }
 
-    //private val uploadViewModel: UploadViewModel by viewModels()
-    //todo check ktx pour ça
-    private lateinit var _historyViewModel: HistoryViewModel
-    private lateinit var _uploadViewModel: UploadViewModel
+    private val _historyViewModel: HistoryViewModel by viewModels()
+    private val _uploadViewModel: UploadViewModel by viewModels()
     private val _adapterForHistory = HistoryListAdapter()
 
     /**
@@ -85,8 +83,6 @@ class MainActivity : AppCompatActivity() {
         val numberOfColumnsToShow: Int
 
         val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        _historyViewModel = ViewModelProviders.of(this).get(HistoryViewModel::class.java)
-        _uploadViewModel = ViewModelProviders.of(this).get(UploadViewModel::class.java)
         binding.lifecycleOwner = this
         binding.activity = this
 
