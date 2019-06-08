@@ -51,6 +51,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
         private val _infoBackground: View = mainView.findViewById(R.id.background_info_view_history_item)
         private val _errorText: TextView = mainView.findViewById(R.id.error_text_history_item)
         private val _uploadProgress: ProgressBar = mainView.findViewById(R.id.upload_progress_history_item)
+        private val _currentGroupIndicator: View = mainView.findViewById(R.id.current_group_indicator_history_item)
 
         init {
             mainView.setOnClickListener { view: View? -> clickCallback(view?.tag as? Int ?: -1) }
@@ -113,6 +114,8 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
                     _uploadProgress.visibility = View.GONE
                 }
             }
+
+            _currentGroupIndicator.visibility = (if (historyEntry.isInCurrentUploadGroup) View.VISIBLE else View.GONE)
 
             mainView.tag = position
         }

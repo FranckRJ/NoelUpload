@@ -65,7 +65,8 @@ class HistoryEntryRepository private constructor(private val appContext: Context
             },
             Utils.noelshackLinkToPreviewLink(uploadInfos.imageBaseLink),
             if (fromDatabase) UploadStatus.FINISHED else UploadStatus.UPLOADING,
-            if (fromDatabase) "" else "0"
+            if (fromDatabase) "" else "0",
+            !fromDatabase
         )
     }
 
@@ -197,6 +198,36 @@ class HistoryEntryRepository private constructor(private val appContext: Context
                     )
                     _listOfHistoryEntriesChanges.updateValue()
                 }
+            }
+        }
+
+    /**
+     * Passe le [HistoryEntryInfos.isInCurrentUploadGroup] à false des entrées de [_listOfHistoryEntries] correspondant
+     * à chaque [UploadInfos] de [listOfUploadInfos] sur le main thread et dispatch les modifications.
+     */
+    fun postRemoveTheseUploadInfosFromCurrentGroup(listOfUploadInfos: List<UploadInfos>) =
+        GlobalScope.launch(Dispatchers.Main) {
+            var changeHasOccured = false
+
+            for (uploadInfos: UploadInfos in listOfUploadInfos) {
+                val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
+                val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.getOrNull(indexInList)
+
+                if (historyEntry != null) {
+                    historyEntry.isInCurrentUploadGroup = false
+                    _listOfHistoryEntriesChanges.value.add(
+                        HistoryEntryChangeInfos(
+                            historyEntry.copy(),
+                            HistoryEntryChangeType.CHANGED,
+                            indexInList
+                        )
+                    )
+                    changeHasOccured = true
+                }
+            }
+
+            if (changeHasOccured) {
+                _listOfHistoryEntriesChanges.updateValue()
             }
         }
 

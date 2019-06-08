@@ -17,7 +17,8 @@ data class HistoryEntryInfos(
     var fileForPreview: File? = null,
     var fallbackPreviewUrl: String = "",
     var uploadStatus: UploadStatus = UploadStatus.ERROR,
-    var uploadStatusMessage: String = ""
+    var uploadStatusMessage: String = "",
+    var isInCurrentUploadGroup: Boolean = false
 ) {
     fun copy(): HistoryEntryInfos {
         return HistoryEntryInfos(
@@ -28,7 +29,8 @@ data class HistoryEntryInfos(
             fileForPreview,
             fallbackPreviewUrl,
             uploadStatus,
-            uploadStatusMessage
+            uploadStatusMessage,
+            isInCurrentUploadGroup
         )
     }
 }

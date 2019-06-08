@@ -19,10 +19,11 @@ import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
-//todo mais est-ce vraiment utile de save des trucs si l'upload échoue à cause du manque de mémoire ?
+//todo sauvegarder la liste des images à upload
 /**
  * ViewModel contenant les diverses informations pour upload un fichier.
  */
@@ -32,6 +33,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private val _listOfFilesToUpload: MutableList<UploadInfos> = mutableListOf()
     private val _isUploading: AtomicBoolean = AtomicBoolean(false)
+    private val _nbOfPendingsAddToUploadList: AtomicInteger = AtomicInteger(0)
 
     /**
      * Retourne le fichier servant de cache pour l'[uploadInfos].
@@ -164,11 +166,24 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Fonction appelée lorsqu'un upload se termine. Elle s'occupe de le supprimer de la liste des uploads et de lancer
-     * le prochain upload si nécessaire.
+     * Fonction appelée lorsqu'un upload se termine. Elle s'occupe de le supprimer de la liste des uploads, de lancer
+     * le prochain upload si nécessaire et de màj l'historique. Si [uploadStatus] vaut [UploadStatus.FINISHED] alors
+     * l'historique sera màj avec le lien contenu dans [uploadStatusMessage], sinon s'il vaut [UploadStatus.ERROR] alors
+     * l'historique sera màj avec l'erreur contenue dans [uploadStatusMessage].
      */
-    private suspend fun uploadOfAnImageEnded(uploadInfos: UploadInfos) = withContext(Dispatchers.Main) {
+    private suspend fun uploadOfAnImageEnded(
+        uploadInfos: UploadInfos,
+        uploadStatus: UploadStatus,
+        uploadStatusMessage: String
+    ) = withContext(Dispatchers.Main) {
         _listOfFilesToUpload.remove(uploadInfos)
+
+        if (uploadStatus == UploadStatus.FINISHED) {
+            _historyEntryRepo.postUpdateThisUploadInfosLinkAndSetFinished(uploadInfos, uploadStatusMessage)
+        } else if (uploadStatus == UploadStatus.ERROR) {
+            _historyEntryRepo.postUpdateThisUploadInfosStatus(uploadInfos, UploadStatus.ERROR, uploadStatusMessage)
+        }
+
         if (_listOfFilesToUpload.isNotEmpty()) {
             startUploadThisImage(_listOfFilesToUpload.first())
         }
@@ -181,6 +196,9 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private fun startUploadThisImage(uploadInfos: UploadInfos): Boolean {
         if (!_isUploading.getAndSet(true)) {
             viewModelScope.launch(Dispatchers.IO) {
+                var uploadStatus = UploadStatus.UPLOADING
+                var uploadStatusMessage = ""
+
                 try {
                     val fileToUpload = getUploadInfoCachedFile(uploadInfos)
                     if (fileToUpload.exists()) {
@@ -190,20 +208,18 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                                 app.contentResolver.getType(Uri.parse(uploadInfos.imageUri)),
                                 uploadInfos
                             )
-                        _historyEntryRepo.postUpdateThisUploadInfosLinkAndSetFinished(uploadInfos, linkOfImage)
+                        uploadStatus = UploadStatus.FINISHED
+                        uploadStatusMessage = linkOfImage
                         fileToUpload.delete()
                     } else {
                         throw Exception(app.getString(R.string.errorUploadFailed))
                     }
                 } catch (e: Exception) {
-                    _historyEntryRepo.postUpdateThisUploadInfosStatus(
-                        uploadInfos,
-                        UploadStatus.ERROR,
-                        e.message.toString()
-                    )
+                    uploadStatus = UploadStatus.ERROR
+                    uploadStatusMessage = e.message.toString()
                 } finally {
                     _isUploading.set(false)
-                    uploadOfAnImageEnded(uploadInfos)
+                    uploadOfAnImageEnded(uploadInfos, uploadStatus, uploadStatusMessage)
                 }
             }
 
@@ -216,18 +232,30 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     /**
      * Ajoute l'image représentée par [newImageUri] à la liste des uploads et commence à uploader ces images.
      */
-    fun addFileToListOfFilesToUploadAndStartUpload(newImageUri: Uri) = viewModelScope.launch(Dispatchers.Main) {
-        val newUploadInfos = UploadInfos(
-            "",
-            FileUriUtils.getFileName(newImageUri, app),
-            newImageUri.toString(),
-            System.currentTimeMillis()
-        )
+    fun addFileToListOfFilesToUploadAndStartUpload(newImageUri: Uri) {
+        _nbOfPendingsAddToUploadList.incrementAndGet()
 
-        _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
-        postCreatePreviewForThisUploadInfos(newUploadInfos)
-        createCachedFileForUpload(newUploadInfos)
-        _listOfFilesToUpload.add(newUploadInfos)
-        startUploadThisImage(newUploadInfos)
+        viewModelScope.launch(Dispatchers.Main) {
+            val newUploadInfos = UploadInfos(
+                "",
+                FileUriUtils.getFileName(newImageUri, app),
+                newImageUri.toString(),
+                System.currentTimeMillis()
+            )
+
+            _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
+            postCreatePreviewForThisUploadInfos(newUploadInfos)
+            createCachedFileForUpload(newUploadInfos)
+            _listOfFilesToUpload.add(newUploadInfos)
+            _nbOfPendingsAddToUploadList.decrementAndGet()
+            startUploadThisImage(newUploadInfos)
+        }
+    }
+
+    /**
+     * Retourne true si plus aucune image ne doit être upload, faux sinon.
+     */
+    fun uploadListIsEmpty(): Boolean {
+        return (_listOfFilesToUpload.isEmpty() && _nbOfPendingsAddToUploadList.get() == 0)
     }
 }

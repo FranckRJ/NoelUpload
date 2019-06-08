@@ -17,7 +17,15 @@ data class UploadInfos(
     val imageName: String,
     val imageUri: String,
     val uploadTimeInMs: Long
-)
+) {
+    /**
+     * Retourne vrai si [other] représente le même [UploadInfos] que this, càd si ils ont le même [imageUri] et
+     * [uploadTimeInMs], retourne faux sinon.
+     */
+    fun representSameUpload(other: UploadInfos): Boolean {
+        return (this.imageUri == other.imageUri && this.uploadTimeInMs == other.uploadTimeInMs)
+    }
+}
 
 /**
  * Enum représentant le statut d'un upload.

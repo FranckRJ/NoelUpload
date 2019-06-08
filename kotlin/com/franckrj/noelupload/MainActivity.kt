@@ -29,11 +29,14 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
         private const val ACTION_UPLOAD_IMAGE: String = "com.franckrj.noelupload.UPLOAD_IMAGE"
+        private const val SAVE_PAUSE_COPY_OF_UPLOAD_LINKS = "SAVE_PAUSE_COPY_OF_UPLOAD_LINKS"
+        private const val DEFAULT_PAUSE_COPY_OF_UPLOAD_LINKS: Boolean = false
     }
 
     private val _historyViewModel: HistoryViewModel by viewModels()
     private val _uploadViewModel: UploadViewModel by viewModels()
     private val _adapterForHistory = HistoryListAdapter()
+    private var _pauseCopyOfUploadLinks: Boolean = DEFAULT_PAUSE_COPY_OF_UPLOAD_LINKS
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
@@ -51,6 +54,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Copie les liens du groupe d'upload si il n'y a plus aucun upload en cours et si la copie n'est pas mise en pause.
+     * La copie est mise en pause lors du choix de nouvelles images à upload.
+     */
+    private fun tryToCopyLinksFromUploadGroup() {
+        if (!_pauseCopyOfUploadLinks && _uploadViewModel.uploadListIsEmpty()) {
+            val listOfLinks: List<String> = _historyViewModel.getDirectLinksOfUploadGrouptAndClearIt()
+
+            if (listOfLinks.isNotEmpty()) {
+                val linksInAString: String = listOfLinks.joinToString(" ")
+
+                Utils.putStringInClipboard(this, linksInAString)
+                Toast.makeText(
+                    this,
+                    if (listOfLinks.size == 1) R.string.linkCopied else R.string.linksCopied,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /**
      * Lance l'upload de [uri] ou affiche un message d'erreur.
      */
     private fun startUploadThisImage(uri: Uri?) {
@@ -62,8 +86,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Consomme le [currIntent], s'il est du bon type initialise la nouvelle image à upload s'il est valide,
-     * sinon s'il est invalide affiche un message d'erreur.
+     * Consomme le [currIntent], lance des uploads ou ouvre le sélecteur d'image.
      */
     private fun consumeIntent(currIntent: Intent?) {
         if (currIntent != null) {
@@ -100,6 +123,11 @@ class MainActivity : AppCompatActivity() {
         binding.lifecycleOwner = this
         binding.activity = this
 
+        if (savedInstanceState != null) {
+            _pauseCopyOfUploadLinks =
+                savedInstanceState.getBoolean(SAVE_PAUSE_COPY_OF_UPLOAD_LINKS, DEFAULT_PAUSE_COPY_OF_UPLOAD_LINKS)
+        }
+
         numberOfColumnsToShow = _historyViewModel.computeNumberOfColumnsToShow(windowManager.defaultDisplay)
         FixedGlobalHeightRelativeLayout.fixedHeightInPixel =
             _historyViewModel.computeHeightOfItems(numberOfColumnsToShow, windowManager.defaultDisplay)
@@ -130,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                             HistoryEntryRepository.HistoryEntryChangeType.CHANGED -> {
                                 _adapterForHistory.notifyItemChanged(historyEntryChange.changeIndex)
                                 if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.FINISHED) {
-                                    itemInHistoryListClicked(historyEntryChange.newHistoryEntry)
+                                    tryToCopyLinksFromUploadGroup()
                                 } else if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.ERROR) {
                                     Toast.makeText(
                                         this,
@@ -154,6 +182,12 @@ class MainActivity : AppCompatActivity() {
             }
             consumeIntent(intent)
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putBoolean(SAVE_PAUSE_COPY_OF_UPLOAD_LINKS, _pauseCopyOfUploadLinks)
     }
 
     /**
@@ -180,7 +214,8 @@ class MainActivity : AppCompatActivity() {
             consumeIntent(data)
         }
 
-        //todo reprendre la copie des liens
+        _pauseCopyOfUploadLinks = false
+        tryToCopyLinksFromUploadGroup()
     }
 
     /**
@@ -193,8 +228,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
-            //todo stopper la copie des liens
             startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
+            _pauseCopyOfUploadLinks = true
         } catch (e: Exception) {
             Toast.makeText(this, R.string.errorFileManagerNotFound, Toast.LENGTH_LONG).show()
         }

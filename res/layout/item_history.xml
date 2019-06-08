@@ -53,6 +53,21 @@
             android:indeterminateTintMode="src_in"
             android:progressTint="@android:color/white" />
 
+        <!-- TODO: optimiser ça et mettre les couleurs dans colors.xml etc -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/current_group_indicator_history_item"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="4dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#DFCCFF"
+            app:cardCornerRadius="6dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#000000"
+            app:strokeWidth="1dp" />
+
     </com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout>
 
 </com.google.android.material.card.MaterialCardView>

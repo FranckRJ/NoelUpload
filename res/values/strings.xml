@@ -7,6 +7,7 @@
     <string name="errorInvalidLink">Erreur, le lien est invalide.</string>
     <string name="errorMessage">Erreur : %1$s.</string>
     <string name="linkCopied">Lien copié.</string>
+    <string name="linksCopied">Liens copiés.</string>
     <string name="errorUploadAlreadyRunning">Erreur, un upload est déjà en cours.</string>
     <string name="imagePreview">Aperçu de l\'image</string>
     <string name="error">Erreur</string>
