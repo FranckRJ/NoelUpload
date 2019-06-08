@@ -43,13 +43,15 @@ class MainActivity : AppCompatActivity() {
      * le presse-papier ou affiche une erreur.
      */
     private fun itemInHistoryListClicked(historyEntryInfos: HistoryEntryInfos) {
-        val linkOfImage: String = Utils.noelshackToDirectLink(historyEntryInfos.imageBaseLink)
+        if (historyEntryInfos.uploadStatus != UploadStatus.UPLOADING) {
+            val linkOfImage: String = Utils.noelshackToDirectLink(historyEntryInfos.imageBaseLink)
 
-        if (Utils.checkIfItsANoelshackImageLink(linkOfImage)) {
-            Utils.putStringInClipboard(this, linkOfImage)
-            Toast.makeText(this, R.string.linkCopied, Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()
+            if (Utils.checkIfItsANoelshackImageLink(linkOfImage)) {
+                Utils.putStringInClipboard(this, linkOfImage)
+                Toast.makeText(this, R.string.linkCopied, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
