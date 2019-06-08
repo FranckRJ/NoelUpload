@@ -1,25 +1,26 @@
 package com.franckrj.noelupload
 
 import android.app.Activity
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.databinding.ActivityMainBinding
+import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
 import com.franckrj.noelupload.history.HistoryEntryInfos
+import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.history.HistoryListAdapter
 import com.franckrj.noelupload.history.HistoryViewModel
-import com.franckrj.noelupload.upload.UploadViewModel
-import androidx.recyclerview.widget.SimpleItemAnimator
-import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.upload.UploadStatus
+import com.franckrj.noelupload.upload.UploadViewModel
 import com.franckrj.noelupload.utils.Utils
-import androidx.appcompat.app.AppCompatActivity
-import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
 
 /**
  * Activité principale pour consulter l'historique des uploads et upload des nouvelles images.
@@ -54,9 +55,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun startUploadThisImage(uri: Uri?) {
         if (uri != null) {
-            if (!_uploadViewModel.startUploadThisImage(uri)) {
-                Toast.makeText(this, R.string.errorUploadAlreadyRunning, Toast.LENGTH_SHORT).show()
-            }
+            _uploadViewModel.addFileToListOfFilesToUploadAndStartUpload(uri)
         } else {
             Toast.makeText(this, R.string.errorFileIsInvalid, Toast.LENGTH_SHORT).show()
         }
@@ -68,10 +67,25 @@ class MainActivity : AppCompatActivity() {
      */
     private fun consumeIntent(currIntent: Intent?) {
         if (currIntent != null) {
-            if (currIntent.action == Intent.ACTION_SEND && currIntent.hasExtra(Intent.EXTRA_STREAM)) {
-                val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+            if (currIntent.action == Intent.ACTION_SEND || currIntent.action == Intent.ACTION_SEND_MULTIPLE) {
+                val newClipData: ClipData? = currIntent.clipData
 
-                startUploadThisImage(newUri)
+                if (newClipData != null) {
+                    for (idx: Int in 0 until newClipData.itemCount) {
+                        startUploadThisImage(newClipData.getItemAt(idx).uri)
+                    }
+                } else if (currIntent.hasExtra(Intent.EXTRA_STREAM)) {
+                    val newListOfUris: List<Uri?>? = currIntent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+
+                    if (newListOfUris != null) {
+                        for (currUri: Uri? in newListOfUris) {
+                            startUploadThisImage(currUri)
+                        }
+                    } else {
+                        val newUri: Uri? = currIntent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+                        startUploadThisImage(newUri)
+                    }
+                }
             } else if (currIntent.action == ACTION_UPLOAD_IMAGE) {
                 pickAnImage()
             }
@@ -156,22 +170,30 @@ class MainActivity : AppCompatActivity() {
      * affiche une erreur si le retour est invalide.
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        val newUri: Uri? = data?.data
+        super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == CHOOSE_IMAGE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            startUploadThisImage(newUri)
+        if (requestCode == CHOOSE_IMAGE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+            data.action = Intent.ACTION_SEND
+            if (!data.hasExtra(Intent.EXTRA_STREAM)) {
+                data.putExtra(Intent.EXTRA_STREAM, data.data)
+            }
+            consumeIntent(data)
         }
 
-        super.onActivityResult(requestCode, resultCode, data)
+        //todo reprendre la copie des liens
     }
 
     /**
      * Lance un intent permettant de sélectionner une image ou affiche une erreur si la sélection est impossible.
      */
     fun pickAnImage() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "image/*"
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+
         try {
+            //todo stopper la copie des liens
             startActivityForResult(intent, CHOOSE_IMAGE_REQUEST_CODE)
         } catch (e: Exception) {
             Toast.makeText(this, R.string.errorFileManagerNotFound, Toast.LENGTH_LONG).show()

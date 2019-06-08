@@ -2,12 +2,12 @@ package com.franckrj.noelupload.history
 
 import android.content.Context
 import com.franckrj.noelupload.AppDatabase
-import com.franckrj.noelupload.utils.Utils
 import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.upload.UploadInfosDao
 import com.franckrj.noelupload.upload.UploadStatus
 import com.franckrj.noelupload.utils.SafeLiveData
 import com.franckrj.noelupload.utils.SafeMutableLiveData
+import com.franckrj.noelupload.utils.Utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -74,11 +74,13 @@ class HistoryEntryRepository private constructor(private val appContext: Context
      * n'existe pas.
      */
     private fun getIndexOfUploadInfosInList(uploadInfos: UploadInfos?): Int {
-        val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.lastOrNull()
+        if (uploadInfos != null) {
+            for (idx: Int in _listOfHistoryEntries.lastIndex downTo 0) {
+                val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.getOrNull(idx)
 
-        if (uploadInfos != null && historyEntry != null) {
-            if (uploadInfos.imageUri == historyEntry.imageUri && uploadInfos.uploadTimeInMs == historyEntry.uploadTimeInMs) {
-                return _listOfHistoryEntries.lastIndex
+                if (historyEntry != null && uploadInfos.imageUri == historyEntry.imageUri && uploadInfos.uploadTimeInMs == historyEntry.uploadTimeInMs) {
+                    return idx
+                }
             }
         }
         return -1

@@ -30,8 +30,15 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
+    private val _listOfFilesToUpload: MutableList<UploadInfos> = mutableListOf()
+    private val _isUploading: AtomicBoolean = AtomicBoolean(false)
 
-    private var _isUploading: AtomicBoolean = AtomicBoolean(false)
+    /**
+     * Retourne le fichier servant de cache pour l'[uploadInfos].
+     */
+    private fun getUploadInfoCachedFile(uploadInfos: UploadInfos): File {
+        return File("${app.cacheDir.path}/file-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}.nop")
+    }
 
     /**
      * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
@@ -100,13 +107,13 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Lance dans un background thread la création d'une miniature pour l'image représentée par [baseUri] et [uploadInfos].
+     * Lance dans un background thread la création d'une miniature pour l'image représentée par [uploadInfos].
      * Met à jour la DB lorsque la création de la preview est terminée.
      */
-    private suspend fun postCreatePreviewForThisUploadInfos(baseUri: Uri, uploadInfos: UploadInfos) =
+    private suspend fun postCreatePreviewForThisUploadInfos(uploadInfos: UploadInfos) =
         viewModelScope.launch(Dispatchers.IO) {
             if (FileUriUtils.savePreviewOfUriToFile(
-                    baseUri,
+                    Uri.parse(uploadInfos.imageUri),
                     _historyEntryRepo.getPreviewFileFromUploadInfos(uploadInfos),
                     (_maxPreviewWidth * 1.5).roundToInt(),
                     (_maxPreviewHeight * 1.5).roundToInt(),
@@ -118,79 +125,85 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         }
 
     /**
-     * Retourne une copie du fichier représenté par [baseUri]. Si cette copie possède des données EXIF les tags de GPS
+     * Créé une copie du fichier représenté par [uploadInfos]. Si cette copie possède des données EXIF les tags de GPS
      * seront supprimés, throw en cas d'erreur de création de la copie.
      * La copie est sauvegardées dans le cache, elle doit être supprimée après utilisation.
      */
-    private suspend fun createCachedFileForUpload(baseUri: Uri, uploadInfos: UploadInfos): File =
-        withContext(Dispatchers.IO) {
-            val cachedFile =
-                File("${app.cacheDir.path}/file-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}.nop")
+    private suspend fun createCachedFileForUpload(uploadInfos: UploadInfos) = withContext(Dispatchers.IO) {
+        val cachedFile = getUploadInfoCachedFile(uploadInfos)
 
-            if (!FileUriUtils.saveUriContentToFile(baseUri, cachedFile, app)) {
-                throw Exception(app.getString(R.string.errorUploadFailed))
-            }
-
-            try {
-                val exifInterface = ExifInterface(cachedFile)
-                exifInterface.setGpsInfo(Location(""))
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING_REF, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE_REF, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE, null)
-                exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF, null)
-                exifInterface.saveAttributes()
-            } catch (e: Exception) {
-                /* Le fichier ne supporte pas les EXIF c'est pas grave. */
-            }
-
-            cachedFile
+        if (!FileUriUtils.saveUriContentToFile(Uri.parse(uploadInfos.imageUri), cachedFile, app)) {
+            throw Exception(app.getString(R.string.errorUploadFailed))
         }
 
+        try {
+            val exifInterface = ExifInterface(cachedFile)
+            exifInterface.setGpsInfo(Location(""))
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_BEARING_REF, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_DISTANCE_REF, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE, null)
+            exifInterface.setAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF, null)
+            exifInterface.saveAttributes()
+        } catch (e: Exception) {
+            /* Le fichier ne supporte pas les EXIF c'est pas grave. */
+        }
+    }
+
     /**
-     * Initialise des trucs pour ajouter l'image pointée par [newImageUri] à l'historique et lance son upload.
+     * Fonction appelée lorsqu'un upload se termine. Elle s'occupe de le supprimer de la liste des uploads et de lancer
+     * le prochain upload si nécessaire.
+     */
+    private suspend fun uploadOfAnImageEnded(uploadInfos: UploadInfos) = withContext(Dispatchers.Main) {
+        _listOfFilesToUpload.remove(uploadInfos)
+        if (_listOfFilesToUpload.isNotEmpty()) {
+            startUploadThisImage(_listOfFilesToUpload.first())
+        }
+    }
+
+    /**
+     * Upload l'image représentée par [uploadInfos].
      * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
      */
-    fun startUploadThisImage(newImageUri: Uri): Boolean {
+    private fun startUploadThisImage(uploadInfos: UploadInfos): Boolean {
         if (!_isUploading.getAndSet(true)) {
             viewModelScope.launch(Dispatchers.IO) {
-                val newUploadInfos = UploadInfos(
-                    "",
-                    FileUriUtils.getFileName(newImageUri, app),
-                    newImageUri.toString(),
-                    System.currentTimeMillis()
-                )
-
-                _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
-                postCreatePreviewForThisUploadInfos(newImageUri, newUploadInfos)
-
                 try {
-                    val fileToUpload = createCachedFileForUpload(newImageUri, newUploadInfos)
-                    val linkOfImage =
-                        uploadThisImage(fileToUpload, app.contentResolver.getType(newImageUri), newUploadInfos)
-                    _historyEntryRepo.postUpdateThisUploadInfosLinkAndSetFinished(newUploadInfos, linkOfImage)
-                    fileToUpload.delete()
+                    val fileToUpload = getUploadInfoCachedFile(uploadInfos)
+                    if (fileToUpload.exists()) {
+                        val linkOfImage =
+                            uploadThisImage(
+                                fileToUpload,
+                                app.contentResolver.getType(Uri.parse(uploadInfos.imageUri)),
+                                uploadInfos
+                            )
+                        _historyEntryRepo.postUpdateThisUploadInfosLinkAndSetFinished(uploadInfos, linkOfImage)
+                        fileToUpload.delete()
+                    } else {
+                        throw Exception(app.getString(R.string.errorUploadFailed))
+                    }
                 } catch (e: Exception) {
                     _historyEntryRepo.postUpdateThisUploadInfosStatus(
-                        newUploadInfos,
+                        uploadInfos,
                         UploadStatus.ERROR,
                         e.message.toString()
                     )
                 } finally {
                     _isUploading.set(false)
+                    uploadOfAnImageEnded(uploadInfos)
                 }
             }
 
@@ -198,5 +211,23 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         } else {
             return false
         }
+    }
+
+    /**
+     * Ajoute l'image représentée par [newImageUri] à la liste des uploads et commence à uploader ces images.
+     */
+    fun addFileToListOfFilesToUploadAndStartUpload(newImageUri: Uri) = viewModelScope.launch(Dispatchers.Main) {
+        val newUploadInfos = UploadInfos(
+            "",
+            FileUriUtils.getFileName(newImageUri, app),
+            newImageUri.toString(),
+            System.currentTimeMillis()
+        )
+
+        _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
+        postCreatePreviewForThisUploadInfos(newUploadInfos)
+        createCachedFileForUpload(newUploadInfos)
+        _listOfFilesToUpload.add(newUploadInfos)
+        startUploadThisImage(newUploadInfos)
     }
 }
