@@ -73,13 +73,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
                 Glide.with(mainView.context)
                     .load(historyEntry.fileForPreview ?: historyEntry.fallbackPreviewUrl)
                     .placeholder(R.drawable.ic_file_downloading_white_86dp)
-                    .error(
-                        if (historyEntry.imageBaseLink.isEmpty()) {
-                            R.drawable.ic_file_downloading_white_86dp
-                        } else {
-                            R.drawable.ic_file_download_failed_white_86dp
-                        }
-                    )
+                    .error(R.drawable.ic_file_download_failed_white_86dp)
                     .centerCrop()
                     .into(_imagePreview)
             } else {

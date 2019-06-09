@@ -58,7 +58,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
             uploadInfos.imageName,
             uploadInfos.imageUri,
             uploadInfos.uploadTimeInMs,
-            if (previewFile.exists()) {
+            if (previewFile.exists() || (fromDatabase && uploadInfos.imageBaseLink.isEmpty())) {
                 previewFile
             } else {
                 null
