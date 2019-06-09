@@ -10,6 +10,7 @@ import com.franckrj.noelupload.R
 import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.utils.Utils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType
@@ -28,12 +29,18 @@ import kotlin.math.roundToInt
  * ViewModel contenant les diverses informations pour upload un fichier.
  */
 class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
+    companion object {
+        private const val MAX_NUMBER_OF_UPLOADS_IN_SHORT_TIME: Int = 5
+        private const val SHORT_TIME_DURATION_IN_MS: Long = 5_000
+    }
+
     private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private val _maxPreviewWidth: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewWidth)
     private val _maxPreviewHeight: Int = app.resources.getDimensionPixelSize(R.dimen.maxPreviewHeight)
     private val _listOfFilesToUpload: MutableList<UploadInfos> = mutableListOf()
     private val _isUploading: AtomicBoolean = AtomicBoolean(false)
     private val _nbOfPendingsAddToUploadList: AtomicInteger = AtomicInteger(0)
+    private val _listOfLastUploadsTimeInMs: MutableList<Long> = mutableListOf()
 
     /**
      * Retourne le fichier servant de cache pour l'[uploadInfos].
@@ -190,6 +197,24 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * Met en pause la coroutine pour qu'il n'y ai pas plus de [MAX_NUMBER_OF_UPLOADS_IN_SHORT_TIME] uploads
+     * en [SHORT_TIME_DURATION_IN_MS] ms. Met aussi à jour [_listOfLastUploadsTimeInMs] avec les nouveaux temps d'upload
+     * des [MAX_NUMBER_OF_UPLOADS_IN_SHORT_TIME] derniers uploads.
+     */
+    private suspend fun waitForUploadIfNeededAndUpdateListOfLastUploadsTime() {
+        if (_listOfLastUploadsTimeInMs.size >= MAX_NUMBER_OF_UPLOADS_IN_SHORT_TIME) {
+            val waitTime: Long =
+                (SHORT_TIME_DURATION_IN_MS - (System.currentTimeMillis() - _listOfLastUploadsTimeInMs.first()))
+
+            if (waitTime > 0) {
+                delay(waitTime)
+            }
+            _listOfLastUploadsTimeInMs.removeAt(0)
+        }
+        _listOfLastUploadsTimeInMs.add(System.currentTimeMillis())
+    }
+
+    /**
      * Upload l'image représentée par [uploadInfos].
      * Retourne true si l'upload a commencé, false si un upload était déjà en cours.
      */
@@ -201,13 +226,16 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
 
                 try {
                     val fileToUpload = getUploadInfoCachedFile(uploadInfos)
+
                     if (fileToUpload.exists()) {
-                        val linkOfImage =
-                            uploadThisImage(
-                                fileToUpload,
-                                app.contentResolver.getType(Uri.parse(uploadInfos.imageUri)),
-                                uploadInfos
-                            )
+                        val linkOfImage: String
+
+                        waitForUploadIfNeededAndUpdateListOfLastUploadsTime()
+                        linkOfImage = uploadThisImage(
+                            fileToUpload,
+                            app.contentResolver.getType(Uri.parse(uploadInfos.imageUri)),
+                            uploadInfos
+                        )
                         uploadStatus = UploadStatus.FINISHED
                         uploadStatusMessage = linkOfImage
                         fileToUpload.delete()
