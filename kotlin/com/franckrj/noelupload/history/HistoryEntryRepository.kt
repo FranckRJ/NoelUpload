@@ -150,6 +150,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
 
             if (uploadInfos != null && historyEntry != null && historyEntry.uploadStatus == UploadStatus.UPLOADING) {
                 historyEntry.imageBaseLink = newLink
+                historyEntry.fallbackPreviewUrl = Utils.noelshackLinkToPreviewLink(historyEntry.imageBaseLink)
                 historyEntry.uploadStatus = UploadStatus.FINISHED
                 historyEntry.uploadStatusMessage = ""
 
