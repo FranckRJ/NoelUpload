@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.databinding.ActivityMainBinding
 import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
@@ -117,6 +118,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Met à jour le padding de la liste contenant l'historique en fonction de la taille de la statusbar.
+     */
+    private fun updateHistoryListPadding(listView: RecyclerView) {
+        val idOfStatusBarHeight: Int = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeight: Int = if (idOfStatusBarHeight != 0) {
+            resources.getDimensionPixelSize(idOfStatusBarHeight)
+        } else {
+            0
+        }
+
+        listView.setPaddingRelative(
+            listView.paddingStart,
+            listView.paddingTop + statusBarHeight,
+            listView.paddingEnd,
+            listView.paddingBottom
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val numberOfColumnsToShow: Int
@@ -137,6 +157,7 @@ class MainActivity : AppCompatActivity() {
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
         _adapterForHistory.notifyDataSetChanged()
 
+        updateHistoryListPadding(binding.uploadhistoryListHistory)
         binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, numberOfColumnsToShow)
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
         (binding.uploadhistoryListHistory.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
