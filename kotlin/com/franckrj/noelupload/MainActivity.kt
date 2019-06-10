@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
             val listOfLinks: List<String> = _historyViewModel.getDirectLinksOfUploadGrouptAndClearIt()
 
             if (listOfLinks.isNotEmpty()) {
-                val linksInAString: String = listOfLinks.joinToString(" ")
+                val linksInAString: String = listOfLinks.joinToString("\n")
 
                 Utils.putStringInClipboard(this, linksInAString)
                 Toast.makeText(
