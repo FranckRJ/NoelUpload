@@ -3,15 +3,16 @@ package com.franckrj.noelupload
 import android.app.Activity
 import android.content.ClipData
 import android.content.Intent
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.databinding.ActivityMainBinding
 import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
@@ -118,23 +119,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Met à jour le padding de la liste contenant l'historique en fonction de la taille de la statusbar.
-     */
-    private fun updateHistoryListPadding(listView: RecyclerView) {
-        val previewCardMargin: Int = resources.getDimensionPixelSize(R.dimen.historyCardMargin)
-
-        listView.setOnApplyWindowInsetsListener { view, insets ->
-            view.setPaddingRelative(
-                view.paddingStart,
-                previewCardMargin + insets.systemWindowInsetTop,
-                view.paddingEnd,
-                view.paddingBottom
-            )
-            insets.consumeSystemWindowInsets()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val numberOfColumnsToShow: Int
@@ -155,10 +139,21 @@ class MainActivity : AppCompatActivity() {
         _adapterForHistory.itemClickedCallback = ::itemInHistoryListClicked
         _adapterForHistory.notifyDataSetChanged()
 
-        updateHistoryListPadding(binding.uploadhistoryListHistory)
+        binding.uploadhistoryListHistory.setOnApplyWindowInsetsListener { _, insets ->
+            _historyViewModel.windowInsetTop = insets.systemWindowInsetTop
+            insets.consumeSystemWindowInsets()
+        }
         binding.uploadhistoryListHistory.layoutManager = GridLayoutManager(this, numberOfColumnsToShow)
         binding.uploadhistoryListHistory.adapter = _adapterForHistory
         (binding.uploadhistoryListHistory.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+
+        binding.pickImageFabHistory.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                binding.pickImageFabHistory.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                _historyViewModel.fabHeight = binding.pickImageFabHistory.height
+            }
+        })
 
         _historyViewModel.listOfHistoryEntriesChanges.observe(
             this,
@@ -197,9 +192,20 @@ class MainActivity : AppCompatActivity() {
                 }
             })
 
+        _historyViewModel.historyListPadding.observe(this, Observer { newRect: Rect ->
+            binding.uploadhistoryListHistory.setPaddingRelative(
+                newRect.left,
+                newRect.top,
+                newRect.right,
+                newRect.bottom
+            )
+        })
+
         if (savedInstanceState == null) {
-            if (_adapterForHistory.itemCount > 0) {
-                binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+            binding.uploadhistoryListHistory.post {
+                if (_adapterForHistory.itemCount > 0) {
+                    binding.uploadhistoryListHistory.scrollToPosition(_adapterForHistory.itemCount - 1)
+                }
             }
             consumeIntent(intent)
         }
