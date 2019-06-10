@@ -122,19 +122,17 @@ class MainActivity : AppCompatActivity() {
      * Met à jour le padding de la liste contenant l'historique en fonction de la taille de la statusbar.
      */
     private fun updateHistoryListPadding(listView: RecyclerView) {
-        val idOfStatusBarHeight: Int = resources.getIdentifier("status_bar_height", "dimen", "android")
-        val statusBarHeight: Int = if (idOfStatusBarHeight != 0) {
-            resources.getDimensionPixelSize(idOfStatusBarHeight)
-        } else {
-            0
-        }
+        val previewCardMargin: Int = resources.getDimensionPixelSize(R.dimen.historyCardMargin)
 
-        listView.setPaddingRelative(
-            listView.paddingStart,
-            listView.paddingTop + statusBarHeight,
-            listView.paddingEnd,
-            listView.paddingBottom
-        )
+        listView.setOnApplyWindowInsetsListener { view, insets ->
+            view.setPaddingRelative(
+                view.paddingStart,
+                previewCardMargin + insets.systemWindowInsetTop,
+                view.paddingEnd,
+                view.paddingBottom
+            )
+            insets.consumeSystemWindowInsets()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
