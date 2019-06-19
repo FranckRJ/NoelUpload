@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.franckrj.noelupload.databinding.ActivityMainBinding
 import com.franckrj.noelupload.history.FixedGlobalHeightRelativeLayout
 import com.franckrj.noelupload.history.HistoryEntryInfos
+import com.franckrj.noelupload.history.HistoryEntryMenuDialog
 import com.franckrj.noelupload.history.HistoryEntryRepository
 import com.franckrj.noelupload.history.HistoryListAdapter
 import com.franckrj.noelupload.history.HistoryViewModel
@@ -41,19 +42,21 @@ class MainActivity : AppCompatActivity() {
     private var _pauseCopyOfUploadLinks: Boolean = DEFAULT_PAUSE_COPY_OF_UPLOAD_LINKS
 
     /**
-     * Callback appelé lorsqu'un item est cliqué dans la liste, copie le lien direct associé dans
-     * le presse-papier ou affiche une erreur.
+     * Callback appelé lorsqu'un item est cliqué dans la liste, affiche un dialog contenant le menu de l'entrée si
+     * l'image n'est pas entrain d'être upload.
      */
     private fun itemInHistoryListClicked(historyEntryInfos: HistoryEntryInfos) {
         if (historyEntryInfos.uploadStatus != UploadStatus.UPLOADING) {
-            val linkOfImage: String = Utils.noelshackToDirectLink(historyEntryInfos.imageBaseLink)
+            val args = Bundle()
+            val historyEntryMenuDialog = HistoryEntryMenuDialog()
 
-            if (Utils.checkIfItsANoelshackImageLink(linkOfImage)) {
-                Utils.putStringInClipboard(this, linkOfImage)
-                Toast.makeText(this, R.string.linkCopied, Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()
-            }
+            args.putString(HistoryEntryMenuDialog.ARG_UPLOAD_IMAGE_BASE_LINK, historyEntryInfos.imageBaseLink)
+            args.putString(HistoryEntryMenuDialog.ARG_UPLOAD_IMAGE_NAME, historyEntryInfos.imageName)
+            args.putString(HistoryEntryMenuDialog.ARG_UPLOAD_IMAGE_URI, historyEntryInfos.imageUri)
+            args.putLong(HistoryEntryMenuDialog.ARG_UPLOAD_TIME_IN_MS, historyEntryInfos.uploadTimeInMs)
+
+            historyEntryMenuDialog.arguments = args
+            historyEntryMenuDialog.show(supportFragmentManager, "HistoryEntryMenuDialog")
         }
     }
 
