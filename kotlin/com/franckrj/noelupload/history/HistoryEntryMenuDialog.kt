@@ -6,6 +6,7 @@ import android.app.Dialog
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -14,7 +15,6 @@ import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.utils.Utils
 import java.io.File
 
-//TODO: Copier le lien avec un avertissement
 //TODO: Affichage clair en cas d'erreur sur l'image
 //TODO: Bouton supprimer / partager
 /**
@@ -31,6 +31,7 @@ class HistoryEntryMenuDialog : DialogFragment() {
 
     private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private var _uploadInfos: UploadInfos? = null
+    private var _directLinkOfImage: String? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         /* Suppression de warning justifiée car le layout sera attaché plus tard lors de la construction du dialog. */
@@ -42,10 +43,15 @@ class HistoryEntryMenuDialog : DialogFragment() {
         var newUploadInfos: UploadInfos? = null
 
         if (currArgs != null) {
+            val baseLinkOfImage: String = currArgs.getString(ARG_UPLOAD_IMAGE_BASE_LINK, "")
+
+            _directLinkOfImage =
+                Utils.noelshackToDirectLink(baseLinkOfImage).takeIf { Utils.checkIfItsANoelshackImageLink(it) }
+
             try {
                 newUploadInfos = UploadInfos(
-                    currArgs.getString(ARG_UPLOAD_IMAGE_BASE_LINK, "").ifEmpty { throw Exception() },
-                    currArgs.getString(ARG_UPLOAD_IMAGE_NAME, "").ifEmpty { throw Exception() },
+                    baseLinkOfImage,
+                    currArgs.getString(ARG_UPLOAD_IMAGE_NAME, ""),
                     currArgs.getString(ARG_UPLOAD_IMAGE_URI, "").ifEmpty { throw Exception() },
                     currArgs.getLong(ARG_UPLOAD_TIME_IN_MS, 0).also { if (it == 0L) throw Exception() })
             } catch (e: Exception) {
@@ -72,6 +78,11 @@ class HistoryEntryMenuDialog : DialogFragment() {
         }
 
         builder.setView(mainView)
+
+        _directLinkOfImage?.let { directLinkOfImage: String ->
+            Utils.putStringInClipboard(requireContext(), directLinkOfImage)
+            Toast.makeText(requireContext(), R.string.linkCopied, Toast.LENGTH_SHORT).show()
+        }
 
         return builder.create()
     }
