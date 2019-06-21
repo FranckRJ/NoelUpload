@@ -1,16 +1,14 @@
 package com.franckrj.noelupload.history
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
-import android.view.View
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.franckrj.noelupload.R
+import com.franckrj.noelupload.databinding.DialogHistoryEntryMenuBinding
 import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.utils.Utils
 import java.io.File
@@ -34,13 +32,13 @@ class HistoryEntryMenuDialog : DialogFragment() {
     private var _directLinkOfImage: String? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        /* Suppression de warning justifiée car le layout sera attaché plus tard lors de la construction du dialog. */
-        @SuppressLint("InflateParams")
-        val mainView: View = requireActivity().layoutInflater.inflate(R.layout.dialog_history_entry_menu, null)
-        val imagePreviewView: ImageView = mainView.findViewById(R.id.imagepreview_image_history_entry_menu_dialog)
+        val binding: DialogHistoryEntryMenuBinding =
+            DialogHistoryEntryMenuBinding.inflate(requireActivity().layoutInflater)
         val builder = AlertDialog.Builder(requireActivity())
         val currArgs: Bundle? = arguments
         var newUploadInfos: UploadInfos? = null
+
+        binding.dialog = this
 
         if (currArgs != null) {
             val baseLinkOfImage: String = currArgs.getString(ARG_UPLOAD_IMAGE_BASE_LINK, "")
@@ -69,15 +67,15 @@ class HistoryEntryMenuDialog : DialogFragment() {
                 .error(R.drawable.ic_file_download_failed_white_86dp)
                 .centerCrop()
                 .transition(DrawableTransitionOptions.withCrossFade())
-                .into(imagePreviewView)
+                .into(binding.imagepreviewImageHistoryEntryMenuDialog)
         } else {
             Glide.with(this)
                 .load(R.drawable.ic_file_downloading_white_86dp)
                 .centerCrop()
-                .into(imagePreviewView)
+                .into(binding.imagepreviewImageHistoryEntryMenuDialog)
         }
 
-        builder.setView(mainView)
+        builder.setView(binding.root)
 
         _directLinkOfImage?.let { directLinkOfImage: String ->
             Utils.putStringInClipboard(requireContext(), directLinkOfImage)
@@ -90,5 +88,13 @@ class HistoryEntryMenuDialog : DialogFragment() {
     override fun onPause() {
         dismiss()
         super.onPause()
+    }
+
+    /**
+     * Supprime l'[HistoryEntryInfos] représenté par [_uploadInfos] de l'historique et ferme le dialog.
+     */
+    fun deleteHistoryEntry() {
+        _historyEntryRepo.postDeleteThisUploadInfos(_uploadInfos)
+        dismiss()
     }
 }

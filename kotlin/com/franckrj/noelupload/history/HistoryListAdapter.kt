@@ -20,11 +20,12 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
 
     /**
      * Fonction callback appelée quand un item de la liste est cliqué. Elle appelle la fonction [itemClickedCallback]
-     * avec l'[HistoryEntryInfos] qui a été cliqué.
+     * avec l'[HistoryEntryInfos] qui a été cliqué s'il est bien présent dans la liste.
      */
-    private fun itemInListClicked(position: Int) {
-        if (position >= 0 && position < listOfHistoryEntries.size) {
-            itemClickedCallback?.invoke(listOfHistoryEntries[position])
+    private fun itemInListClicked(historyEntry: HistoryEntryInfos?) {
+        val indexOfThisHistoryEntry: Int = listOfHistoryEntries.indexOf(historyEntry)
+        if (indexOfThisHistoryEntry >= 0 && indexOfThisHistoryEntry < listOfHistoryEntries.size) {
+            itemClickedCallback?.invoke(listOfHistoryEntries[indexOfThisHistoryEntry])
         }
     }
 
@@ -38,14 +39,14 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
 
     override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
         if (position >= 0 && position < listOfHistoryEntries.size) {
-            holder.bindView(listOfHistoryEntries[position], position)
+            holder.bindView(listOfHistoryEntries[position])
         }
     }
 
     /**
      * ViewHolder pour un [HistoryEntryInfos].
      */
-    class HistoryViewHolder(private val mainView: View, clickCallback: (Int) -> Any?) :
+    class HistoryViewHolder(private val mainView: View, clickCallback: (HistoryEntryInfos?) -> Any?) :
         RecyclerView.ViewHolder(mainView) {
         private val _imagePreview: ImageView = mainView.findViewById(R.id.imagepreview_image_history_item)
         private val _infoBackground: View = mainView.findViewById(R.id.background_info_view_history_item)
@@ -54,7 +55,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
         private val _currentGroupIndicator: View = mainView.findViewById(R.id.current_group_indicator_history_item)
 
         init {
-            mainView.setOnClickListener { view: View? -> clickCallback(view?.tag as? Int ?: -1) }
+            mainView.setOnClickListener { view: View? -> clickCallback(view?.tag as? HistoryEntryInfos) }
         }
 
         /**
@@ -62,7 +63,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
          * L'image de preview sera chargée si le fichier est différent de null, sinon la miniature noelshack sera utilisée.
          * L'image de preview vaut null si le fichier n'existe pas.
          */
-        fun bindView(historyEntry: HistoryEntryInfos, position: Int) {
+        fun bindView(historyEntry: HistoryEntryInfos) {
             val currUploadProgression: Int = if (historyEntry.uploadStatus == UploadStatus.UPLOADING) {
                 historyEntry.uploadStatusMessage.toIntOrNull() ?: -1
             } else {
@@ -111,7 +112,7 @@ class HistoryListAdapter : RecyclerView.Adapter<HistoryListAdapter.HistoryViewHo
 
             _currentGroupIndicator.visibility = (if (historyEntry.isInCurrentUploadGroup) View.VISIBLE else View.GONE)
 
-            mainView.tag = position
+            mainView.tag = historyEntry
         }
     }
 }

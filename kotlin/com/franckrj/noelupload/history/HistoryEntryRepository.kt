@@ -110,7 +110,7 @@ class HistoryEntryRepository private constructor(private val appContext: Context
      * Supprime le 1er élement de la [listOfHistoryEntriesChanges] si elle n'est pas vide.
      */
     fun removeFirstHistoryEntryChange() {
-        if (_listOfHistoryEntries.isNotEmpty()) {
+        if (_listOfHistoryEntriesChanges.value.isNotEmpty()) {
             _listOfHistoryEntriesChanges.value.removeAt(0)
         }
     }
@@ -231,6 +231,32 @@ class HistoryEntryRepository private constructor(private val appContext: Context
                 _listOfHistoryEntriesChanges.updateValue()
             }
         }
+
+    /**
+     * Supprime une entrée dans [_listOfHistoryEntries] correspondant au [uploadInfos] sur le main thread et dispatch
+     * les modifications.
+     */
+    fun postDeleteThisUploadInfos(uploadInfos: UploadInfos?) = GlobalScope.launch(Dispatchers.Main) {
+        val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
+        val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.getOrNull(indexInList)
+
+        if (uploadInfos != null && historyEntry != null) {
+            _listOfHistoryEntries.removeAt(indexInList)
+
+            GlobalScope.launch(Dispatchers.IO) {
+                _uploadInfosDao.deleteUploadInfos(uploadInfos)
+            }
+
+            _listOfHistoryEntriesChanges.value.add(
+                HistoryEntryChangeInfos(
+                    historyEntry.copy(),
+                    HistoryEntryChangeType.DELETED,
+                    indexInList
+                )
+            )
+            _listOfHistoryEntriesChanges.updateValue()
+        }
+    }
 
     /**
      * Ajoute une nouvelle entrée dans [_listOfHistoryEntries] correspondant au [uploadInfos] sur le main thread et

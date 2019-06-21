@@ -12,4 +12,5 @@
     <string name="imagePreview">Aperçu de l\'image</string>
     <string name="error">Erreur</string>
     <string name="errorUploadFailed">Erreur, upload raté.</string>
+    <string name="delete">Supprimer</string>
 </resources>
