@@ -14,10 +14,10 @@ import com.franckrj.noelupload.utils.Utils
 import java.io.File
 
 //TODO: Affichage clair en cas d'erreur sur l'image
-//TODO: Bouton supprimer / partager
+//TODO: Bouton partager
 /**
  * Dialog affichant une entrée de l'historique ainsi que des options la concernant. Le lien direct de l'image est copié
- * directement si possible. (en TODO)
+ * directement si possible.
  */
 class HistoryEntryMenuDialog : DialogFragment() {
     companion object {
@@ -30,15 +30,15 @@ class HistoryEntryMenuDialog : DialogFragment() {
     private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private var _uploadInfos: UploadInfos? = null
     private var _directLinkOfImage: String? = null
+    private lateinit var _binding: DialogHistoryEntryMenuBinding
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val binding: DialogHistoryEntryMenuBinding =
-            DialogHistoryEntryMenuBinding.inflate(requireActivity().layoutInflater)
         val builder = AlertDialog.Builder(requireActivity())
         val currArgs: Bundle? = arguments
         var newUploadInfos: UploadInfos? = null
 
-        binding.dialog = this
+        _binding = DialogHistoryEntryMenuBinding.inflate(requireActivity().layoutInflater)
+        _binding.dialog = this
 
         if (currArgs != null) {
             val baseLinkOfImage: String = currArgs.getString(ARG_UPLOAD_IMAGE_BASE_LINK, "")
@@ -67,15 +67,15 @@ class HistoryEntryMenuDialog : DialogFragment() {
                 .error(R.drawable.ic_file_download_failed_white_86dp)
                 .centerCrop()
                 .transition(DrawableTransitionOptions.withCrossFade())
-                .into(binding.imagepreviewImageHistoryEntryMenuDialog)
+                .into(_binding.imagepreviewImageHistoryEntryMenuDialog)
         } else {
             Glide.with(this)
                 .load(R.drawable.ic_file_downloading_white_86dp)
                 .centerCrop()
-                .into(binding.imagepreviewImageHistoryEntryMenuDialog)
+                .into(_binding.imagepreviewImageHistoryEntryMenuDialog)
         }
 
-        builder.setView(binding.root)
+        builder.setView(_binding.root)
 
         _directLinkOfImage?.let { directLinkOfImage: String ->
             Utils.putStringInClipboard(requireContext(), directLinkOfImage)
@@ -83,6 +83,21 @@ class HistoryEntryMenuDialog : DialogFragment() {
         }
 
         return builder.create()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        //TODO: à améliorer.
+        /* Scroll tout en bas de la popup dans le cas où l'image est trop grande (pour voir les boutons). Arrive
+           normalement uniquement en mode paysage. */
+        _binding.contentScrollviewHistoryEntryMenuDialog.post {
+            _binding.contentScrollviewHistoryEntryMenuDialog.apply {
+                val lastChild = getChildAt(childCount - 1)
+                val bottom = lastChild.bottom + paddingBottom
+                val delta = bottom - (scrollY + height)
+                scrollBy(0, delta)
+            }
+        }
     }
 
     override fun onPause() {
