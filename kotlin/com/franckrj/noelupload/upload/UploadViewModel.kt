@@ -43,13 +43,6 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _listOfLastUploadsTimeInMs: MutableList<Long> = mutableListOf()
 
     /**
-     * Retourne le fichier servant de cache pour l'[uploadInfos].
-     */
-    private fun getUploadInfoCachedFile(uploadInfos: UploadInfos): File {
-        return File("${app.cacheDir.path}/file-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}.nop")
-    }
-
-    /**
      * Callback appelé lorsque la progression de l'upload a changé, change le statut de l'upload par le pourcentage
      * de progression de la requête.
      */
@@ -139,7 +132,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * La copie est sauvegardées dans le cache, elle doit être supprimée après utilisation.
      */
     private suspend fun createCachedFileForUpload(uploadInfos: UploadInfos) = withContext(Dispatchers.IO) {
-        val cachedFile = getUploadInfoCachedFile(uploadInfos)
+        val cachedFile = _historyEntryRepo.getCachedFileFromUploadInfo(uploadInfos)
 
         if (!FileUriUtils.saveUriContentToFile(Uri.parse(uploadInfos.imageUri), cachedFile, app)) {
             throw Exception(app.getString(R.string.errorUploadFailed))
@@ -225,7 +218,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 var uploadStatusMessage = ""
 
                 try {
-                    val fileToUpload = getUploadInfoCachedFile(uploadInfos)
+                    val fileToUpload = _historyEntryRepo.getCachedFileFromUploadInfo(uploadInfos)
 
                     if (fileToUpload.exists()) {
                         val linkOfImage: String

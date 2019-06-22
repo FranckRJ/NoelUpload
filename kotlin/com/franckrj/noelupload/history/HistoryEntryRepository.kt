@@ -88,10 +88,17 @@ class HistoryEntryRepository private constructor(private val appContext: Context
     }
 
     /**
-     * Retourne le fichier de la preview d'une entrée de l'historique.
+     * Retourne le fichier de la preview pour l'[uploadInfos].
      */
     fun getPreviewFileFromUploadInfos(uploadInfos: UploadInfos): File {
         return File("${appContext.filesDir.path}/prev-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}")
+    }
+
+    /**
+     * Retourne le fichier servant de cache pour l'[uploadInfos].
+     */
+    fun getCachedFileFromUploadInfo(uploadInfos: UploadInfos): File {
+        return File("${appContext.cacheDir.path}/file-${uploadInfos.uploadTimeInMs}-${Utils.uriToFileName(uploadInfos.imageUri)}.nop")
     }
 
     /**
@@ -245,6 +252,8 @@ class HistoryEntryRepository private constructor(private val appContext: Context
 
             GlobalScope.launch(Dispatchers.IO) {
                 _uploadInfosDao.deleteUploadInfos(uploadInfos)
+                runCatching { getPreviewFileFromUploadInfos(uploadInfos).delete() }
+                runCatching { getCachedFileFromUploadInfo(uploadInfos).delete() }
             }
 
             _listOfHistoryEntriesChanges.value.add(
