@@ -30,6 +30,35 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <View
+                android:id="@+id/background_error_view_history_entry_menu_dialog"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="@color/colorTransparentBackgroundError"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog"
+                app:layout_constraintEnd_toEndOf="@+id/imagepreview_image_history_entry_menu_dialog"
+                app:layout_constraintStart_toStartOf="@+id/imagepreview_image_history_entry_menu_dialog"
+                app:layout_constraintTop_toTopOf="@+id/error_text_history_entry_menu_dialog" />
+
+            <TextView
+                android:id="@+id/error_text_history_entry_menu_dialog"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:lines="1"
+                android:paddingStart="4dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="2dp"
+                android:text="@string/errorImageHasNotBeenUploaded"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog"
+                app:layout_constraintEnd_toEndOf="@+id/imagepreview_image_history_entry_menu_dialog"
+                app:layout_constraintStart_toStartOf="@+id/imagepreview_image_history_entry_menu_dialog" />
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/delete_button_history_entry_menu_dialog"
                 android:layout_width="wrap_content"

@@ -3,6 +3,7 @@ package com.franckrj.noelupload.history
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
@@ -13,7 +14,6 @@ import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.utils.Utils
 import java.io.File
 
-//TODO: Affichage clair en cas d'erreur sur l'image
 //TODO: Bouton partager
 /**
  * Dialog affichant une entrée de l'historique ainsi que des options la concernant. Le lien direct de l'image est copié
@@ -77,9 +77,14 @@ class HistoryEntryMenuDialog : DialogFragment() {
 
         builder.setView(_binding.root)
 
-        _directLinkOfImage?.let { directLinkOfImage: String ->
-            Utils.putStringInClipboard(requireContext(), directLinkOfImage)
-            Toast.makeText(requireContext(), R.string.linkCopied, Toast.LENGTH_SHORT).show()
+        _directLinkOfImage.let { directLinkOfImage: String? ->
+            if (directLinkOfImage != null) {
+                Utils.putStringInClipboard(requireContext(), directLinkOfImage)
+                Toast.makeText(requireContext(), R.string.linkCopied, Toast.LENGTH_SHORT).show()
+            } else {
+                _binding.errorTextHistoryEntryMenuDialog.visibility = View.VISIBLE
+                _binding.backgroundErrorViewHistoryEntryMenuDialog.visibility = View.VISIBLE
+            }
         }
 
         return builder.create()
