@@ -10,8 +10,8 @@ android {
         applicationId "com.franckrj.noelupload"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 1_002_0_004
-        versionName "1.2a4"
+        versionCode 1_002_0_005
+        versionName "1.2a5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resConfigs "fr"
         kapt {
