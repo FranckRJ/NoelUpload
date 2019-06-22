@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.franckrj.noelupload.R
@@ -30,6 +31,7 @@ class HistoryEntryMenuDialog : DialogFragment() {
     private val _historyEntryRepo: HistoryEntryRepository = HistoryEntryRepository.instance
     private var _uploadInfos: UploadInfos? = null
     private var _directLinkOfImage: String? = null
+    private var _deleteConfirmationIsVisible: Boolean = false
     private lateinit var _binding: DialogHistoryEntryMenuBinding
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -128,10 +130,17 @@ class HistoryEntryMenuDialog : DialogFragment() {
     }
 
     /**
-     * Supprime l'[HistoryEntryInfos] représenté par [_uploadInfos] de l'historique et ferme le dialog.
+     * Affiche la confirmation de suppression, si elle est déjà affichée supprime l'[HistoryEntryInfos] représenté
+     * par [_uploadInfos] de l'historique et ferme le dialog.
      */
     fun deleteHistoryEntry() {
-        _historyEntryRepo.postDeleteThisUploadInfos(_uploadInfos)
-        dismiss()
+        if (_deleteConfirmationIsVisible) {
+            _historyEntryRepo.postDeleteThisUploadInfos(_uploadInfos)
+            dismiss()
+        } else {
+            TransitionManager.beginDelayedTransition(_binding.contentLayoutHistoryEntryMenuDialog)
+            _binding.deleteConfirmationTextHistoryEntryMenuDialog.visibility = View.VISIBLE
+            _deleteConfirmationIsVisible = true
+        }
     }
 }

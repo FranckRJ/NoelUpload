@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
 
@@ -16,6 +17,7 @@
         android:layout_height="wrap_content">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/content_layout_history_entry_menu_dialog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -100,13 +102,34 @@
                 app:layout_constraintStart_toEndOf="@+id/share_button_history_entry_menu_dialog"
                 app:layout_constraintTop_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog">
 
-                <ImageView
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/delete"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
-                    android:src="@drawable/ic_delete_white_36dp" />
+                    tools:ignore="UseCompoundDrawables">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/delete"
+                        android:src="@drawable/ic_delete_white_36dp" />
+
+                    <TextView
+                        android:id="@+id/delete_confirmation_text_history_entry_menu_dialog"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:text="@string/askConfirmation"
+                        android:textAllCaps="true"
+                        android:textColor="@color/safeWhite"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                </LinearLayout>
 
             </androidx.cardview.widget.CardView>
 
