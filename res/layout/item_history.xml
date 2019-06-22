@@ -38,6 +38,7 @@
             android:paddingEnd="4dp"
             android:paddingBottom="2dp"
             android:text="@string/error"
+            android:textColor="@color/almostWhite"
             android:textSize="12sp"
             android:textStyle="bold" />
 

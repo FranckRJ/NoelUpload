@@ -2,6 +2,7 @@
 <resources>
     <color name="ic_upload_image_shortcut_background">#292929</color>
     <color name="safeWhite">#FFFFFF</color>
+    <color name="almostWhite">#DDFFFFFF</color>
     <color name="safeTransparent">#00000000</color>
     <color name="colorPrimary">#2B2339</color>
     <color name="colorOnPrimary">#FFFFFF</color>
@@ -12,5 +13,5 @@
     <color name="colorElevate">#1e1e1e</color>
     <color name="colorControlHighlight">#757575</color>
     <color name="colorTransparentBackgroundNormal">#BB222222</color>
-    <color name="colorTransparentBackgroundError">#BBC62828</color>
+    <color name="colorTransparentBackgroundError">#DDC62828</color>
 </resources>
