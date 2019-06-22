@@ -33,7 +33,7 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/link_copied_chip_history_entry_menu_dialog"
+                android:id="@+id/infos_chip_history_entry_menu_dialog"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -42,6 +42,7 @@
                 android:focusableInTouchMode="false"
                 android:text="@string/linkCopied"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog"
                 app:layout_constraintStart_toStartOf="@+id/imagepreview_image_history_entry_menu_dialog" />
 

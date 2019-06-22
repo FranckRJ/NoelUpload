@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -14,6 +16,9 @@ import com.franckrj.noelupload.databinding.DialogHistoryEntryMenuBinding
 import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.utils.Utils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -33,6 +38,23 @@ class HistoryEntryMenuDialog : DialogFragment() {
     private var _directLinkOfImage: String? = null
     private var _deleteConfirmationIsVisible: Boolean = false
     private lateinit var _binding: DialogHistoryEntryMenuBinding
+
+    private fun showInfosChipAsAToast() {
+        _binding.infosChipHistoryEntryMenuDialog.postDelayed({
+            TransitionManager.beginDelayedTransition(_binding.contentLayoutHistoryEntryMenuDialog)
+            _binding.infosChipHistoryEntryMenuDialog.visibility = View.VISIBLE
+
+            lifecycleScope.launch(Dispatchers.Main) {
+                delay(1750)
+                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    /* Comme le fragment se dismiss durant le onPause ça veut dire que dès qu'il n'est plus RESUMED
+                       il restera invalide pour toujours, donc pas de soucis de GONE qui ne s'execute pas. */
+                    TransitionManager.beginDelayedTransition(_binding.contentLayoutHistoryEntryMenuDialog)
+                    _binding.infosChipHistoryEntryMenuDialog.visibility = View.GONE
+                }
+            }
+        }, 100)
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val builder = MaterialAlertDialogBuilder(requireActivity())
@@ -82,9 +104,11 @@ class HistoryEntryMenuDialog : DialogFragment() {
         _directLinkOfImage.let { directLinkOfImage: String? ->
             if (directLinkOfImage != null) {
                 Utils.putStringInClipboard(requireContext(), directLinkOfImage)
+                showInfosChipAsAToast()
             } else {
-                _binding.linkCopiedChipHistoryEntryMenuDialog.setChipBackgroundColorResource(R.color.colorTransparentBackgroundError)
-                _binding.linkCopiedChipHistoryEntryMenuDialog.setText(R.string.errorImageHasNotBeenUploaded)
+                _binding.infosChipHistoryEntryMenuDialog.visibility = View.VISIBLE
+                _binding.infosChipHistoryEntryMenuDialog.setChipBackgroundColorResource(R.color.colorTransparentBackgroundError)
+                _binding.infosChipHistoryEntryMenuDialog.setText(R.string.errorImageHasNotBeenUploaded)
             }
         }
 
