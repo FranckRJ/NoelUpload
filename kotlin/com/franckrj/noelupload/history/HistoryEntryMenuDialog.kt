@@ -82,10 +82,9 @@ class HistoryEntryMenuDialog : DialogFragment() {
         _directLinkOfImage.let { directLinkOfImage: String? ->
             if (directLinkOfImage != null) {
                 Utils.putStringInClipboard(requireContext(), directLinkOfImage)
-                Toast.makeText(requireContext(), R.string.linkCopied, Toast.LENGTH_SHORT).show()
             } else {
-                _binding.errorTextHistoryEntryMenuDialog.visibility = View.VISIBLE
-                _binding.backgroundErrorViewHistoryEntryMenuDialog.visibility = View.VISIBLE
+                _binding.linkCopiedChipHistoryEntryMenuDialog.setChipBackgroundColorResource(R.color.colorTransparentBackgroundError)
+                _binding.linkCopiedChipHistoryEntryMenuDialog.setText(R.string.errorImageHasNotBeenUploaded)
             }
         }
 
