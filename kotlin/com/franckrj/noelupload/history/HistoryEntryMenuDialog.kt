@@ -2,6 +2,7 @@ package com.franckrj.noelupload.history
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -14,7 +15,6 @@ import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.utils.Utils
 import java.io.File
 
-//TODO: Bouton partager
 /**
  * Dialog affichant une entrée de l'historique ainsi que des options la concernant. Le lien direct de l'image est copié
  * directement si possible.
@@ -108,6 +108,23 @@ class HistoryEntryMenuDialog : DialogFragment() {
     override fun onPause() {
         dismiss()
         super.onPause()
+    }
+
+    /**
+     * Partage le lien direct de l'image de l'[_uploadInfos] ou affiche une erreur si le lien est invalide.
+     */
+    fun shareDirectLinkOfHistoryEntry() {
+        _directLinkOfImage.let { directLinkOfImage: String? ->
+            if (directLinkOfImage != null) {
+                val sharingIntent = Intent(Intent.ACTION_SEND)
+                sharingIntent.type = "text/plain"
+                sharingIntent.putExtra(Intent.EXTRA_TEXT, directLinkOfImage)
+                startActivity(Intent.createChooser(sharingIntent, resources.getString(R.string.share)))
+                dismiss()
+            } else {
+                Toast.makeText(requireContext(), R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     /**

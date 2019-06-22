@@ -60,6 +60,31 @@
                 app:layout_constraintStart_toStartOf="@+id/imagepreview_image_history_entry_menu_dialog" />
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/share_button_history_entry_menu_dialog"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:onClick="@{() -> dialog.shareDirectLinkOfHistoryEntry()}"
+                app:cardCornerRadius="4dp"
+                app:cardElevation="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/delete_button_history_entry_menu_dialog"
+                app:layout_constraintHorizontal_chainStyle="spread"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/share"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:src="@drawable/ic_share_white_36dp" />
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
                 android:id="@+id/delete_button_history_entry_menu_dialog"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -70,7 +95,7 @@
                 app:cardElevation="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/share_button_history_entry_menu_dialog"
                 app:layout_constraintTop_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog">
 
                 <ImageView
