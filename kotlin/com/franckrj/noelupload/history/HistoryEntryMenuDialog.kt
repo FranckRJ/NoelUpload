@@ -4,7 +4,9 @@ import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -101,6 +103,19 @@ class HistoryEntryMenuDialog : DialogFragment() {
 
         builder.setView(_binding.root)
 
+        _binding.root.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                _binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                if ((_binding.root.width / _binding.root.height.toDouble()) > 0.9) {
+                    val imagepreviewLayoutParams =
+                        _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams as ConstraintLayout.LayoutParams
+                    imagepreviewLayoutParams.dimensionRatio = "1:0.5"
+                    _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams = imagepreviewLayoutParams
+                }
+            }
+        })
+
         _directLinkOfImage.let { directLinkOfImage: String? ->
             if (directLinkOfImage != null) {
                 Utils.putStringInClipboard(requireContext(), directLinkOfImage)
@@ -113,21 +128,6 @@ class HistoryEntryMenuDialog : DialogFragment() {
         }
 
         return builder.create()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        //TODO: à améliorer.
-        /* Scroll tout en bas de la popup dans le cas où l'image est trop grande (pour voir les boutons). Arrive
-           normalement uniquement en mode paysage. */
-        _binding.contentScrollviewHistoryEntryMenuDialog.post {
-            _binding.contentScrollviewHistoryEntryMenuDialog.apply {
-                val lastChild = getChildAt(childCount - 1)
-                val bottom = lastChild.bottom + paddingBottom
-                val delta = bottom - (scrollY + height)
-                scrollBy(0, delta)
-            }
-        }
     }
 
     override fun onPause() {
