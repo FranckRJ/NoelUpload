@@ -21,7 +21,6 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.roundToInt
 
 //todo SaveStateHandle regarder où c'est ce que c'est etc
 //todo sauvegarder la liste des images à upload
@@ -117,8 +116,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             if (FileUriUtils.savePreviewOfUriToFile(
                     Uri.parse(uploadInfos.imageUri),
                     _historyEntryRepo.getPreviewFileFromUploadInfos(uploadInfos),
-                    (_maxPreviewWidth * 1.5).roundToInt(),
-                    (_maxPreviewHeight * 1.5).roundToInt(),
+                    (_maxPreviewWidth * 2),
+                    (_maxPreviewHeight * 2),
                     app
                 )
             ) {

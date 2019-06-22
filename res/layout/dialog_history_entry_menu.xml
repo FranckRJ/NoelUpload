@@ -40,8 +40,8 @@
                 android:clickable="false"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
                 android:text="@string/linkCopied"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
                 app:layout_constraintBottom_toBottomOf="@+id/imagepreview_image_history_entry_menu_dialog"
                 app:layout_constraintStart_toStartOf="@+id/imagepreview_image_history_entry_menu_dialog" />
 
