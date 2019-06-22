@@ -1,6 +1,5 @@
 package com.franckrj.noelupload.history
 
-import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
@@ -13,6 +12,7 @@ import com.franckrj.noelupload.R
 import com.franckrj.noelupload.databinding.DialogHistoryEntryMenuBinding
 import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.utils.Utils
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.io.File
 
 /**
@@ -33,7 +33,7 @@ class HistoryEntryMenuDialog : DialogFragment() {
     private lateinit var _binding: DialogHistoryEntryMenuBinding
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(requireActivity())
+        val builder = MaterialAlertDialogBuilder(requireActivity())
         val currArgs: Bundle? = arguments
         var newUploadInfos: UploadInfos? = null
 

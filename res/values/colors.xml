@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_upload_image_shortcut_background">#292929</color>
+    <color name="safeWhite">#FFFFFF</color>
+    <color name="safeTransparent">#00000000</color>
     <color name="colorPrimary">#2B2339</color>
     <color name="colorOnPrimary">#FFFFFF</color>
     <color name="colorPrimaryDark">#0C0A10</color>
