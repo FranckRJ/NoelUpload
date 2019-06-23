@@ -41,6 +41,28 @@ class HistoryEntryMenuDialog : DialogFragment() {
     private var _deleteConfirmationIsVisible: Boolean = false
     private lateinit var _binding: DialogHistoryEntryMenuBinding
 
+    /**
+     * Ajuste le ratio de la taille de la prévisualisation de l'image en fonction de la taille du dialog pour que
+     * la root view ne soit pas plus grande que la fenêtre dans laquelle elle se trouve.
+     */
+    private fun adjustImagePreviewSizeForDialogWindow() {
+        _binding.root.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                _binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                if ((_binding.root.width / _binding.root.height.toDouble()) >= 0.95) {
+                    val imagepreviewLayoutParams =
+                        _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams as ConstraintLayout.LayoutParams
+                    imagepreviewLayoutParams.dimensionRatio = "1:0.5"
+                    _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams = imagepreviewLayoutParams
+                }
+            }
+        })
+    }
+
+    /**
+     * Affiche le chip d'information de l'image en tant que toast (fade in, pause de 1750ms, fade out).
+     */
     private fun showInfosChipAsAToast() {
         _binding.infosChipHistoryEntryMenuDialog.postDelayed({
             TransitionManager.beginDelayedTransition(_binding.contentLayoutHistoryEntryMenuDialog)
@@ -102,19 +124,7 @@ class HistoryEntryMenuDialog : DialogFragment() {
         }
 
         builder.setView(_binding.root)
-
-        _binding.root.viewTreeObserver.addOnGlobalLayoutListener(object :
-            ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                _binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                if ((_binding.root.width / _binding.root.height.toDouble()) > 0.9) {
-                    val imagepreviewLayoutParams =
-                        _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams as ConstraintLayout.LayoutParams
-                    imagepreviewLayoutParams.dimensionRatio = "1:0.5"
-                    _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams = imagepreviewLayoutParams
-                }
-            }
-        })
+        adjustImagePreviewSizeForDialogWindow()
 
         _directLinkOfImage.let { directLinkOfImage: String? ->
             if (directLinkOfImage != null) {
