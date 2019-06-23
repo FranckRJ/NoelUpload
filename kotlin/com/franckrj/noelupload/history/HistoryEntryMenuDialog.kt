@@ -2,6 +2,7 @@ package com.franckrj.noelupload.history
 
 import android.app.Dialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewTreeObserver
@@ -143,6 +144,20 @@ class HistoryEntryMenuDialog : DialogFragment() {
     override fun onPause() {
         dismiss()
         super.onPause()
+    }
+
+    /**
+     * Ouvre le lien direct de l'image de l'[_uploadInfos] dans le navigateur ou affiche une erreur si le lien est invalide.
+     */
+    fun openDirectLinkInBrowser() {
+        _directLinkOfImage.let { directLinkOfImage: String? ->
+            if (directLinkOfImage != null) {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(directLinkOfImage)))
+                dismiss()
+            } else {
+                Toast.makeText(requireContext(), R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     /**
