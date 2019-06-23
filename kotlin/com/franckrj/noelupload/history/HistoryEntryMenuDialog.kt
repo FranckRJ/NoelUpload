@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.marginBottom
+import androidx.core.view.marginTop
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -50,8 +52,12 @@ class HistoryEntryMenuDialog : DialogFragment() {
         _binding.root.viewTreeObserver.addOnGlobalLayoutListener(object :
             ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
+                val totalContentHeight: Int = _binding.imagepreviewImageHistoryEntryMenuDialog.height +
+                        _binding.deleteButtonHistoryEntryMenuDialog.height +
+                        _binding.deleteButtonHistoryEntryMenuDialog.marginTop +
+                        _binding.deleteButtonHistoryEntryMenuDialog.marginBottom
                 _binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                if ((_binding.root.width / _binding.root.height.toDouble()) >= 0.95) {
+                if (totalContentHeight > _binding.root.height) {
                     val imagepreviewLayoutParams =
                         _binding.imagepreviewImageHistoryEntryMenuDialog.layoutParams as ConstraintLayout.LayoutParams
                     imagepreviewLayoutParams.dimensionRatio = "1:0.5"
