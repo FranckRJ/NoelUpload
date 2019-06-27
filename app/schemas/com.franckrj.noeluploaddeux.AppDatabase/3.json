@@ -1,0 +1,53 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "551e63bcad763403ef80dadea4c0b63b",
+    "entities": [
+      {
+        "tableName": "UploadInfos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`imageBaseLink` TEXT NOT NULL, `imageName` TEXT NOT NULL, `imageUri` TEXT NOT NULL, `uploadTimeInMs` INTEGER NOT NULL, PRIMARY KEY(`imageUri`, `uploadTimeInMs`))",
+        "fields": [
+          {
+            "fieldPath": "imageBaseLink",
+            "columnName": "imageBaseLink",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageName",
+            "columnName": "imageName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUri",
+            "columnName": "imageUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uploadTimeInMs",
+            "columnName": "uploadTimeInMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "imageUri",
+            "uploadTimeInMs"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '551e63bcad763403ef80dadea4c0b63b')"
+    ]
+  }
+}
