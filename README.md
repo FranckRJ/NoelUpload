@@ -6,4 +6,4 @@ Lien vers la fiche Play Store : https://play.google.com/store/apps/details?id=co
 
 # Présentation
 
-![image1](https://raw.githubusercontent.com/FranckRJ/NoelUpload/master/readme_files/image1.png)     ![image2](https://raw.githubusercontent.com/FranckRJ/NoelUpload/master/readme_files/video1.gif)
+![image1](https://raw.githubusercontent.com/FranckRJ/NoelUpload/master/readme_files/image1.png)     ![video1](https://raw.githubusercontent.com/FranckRJ/NoelUpload/master/readme_files/video1.gif)
