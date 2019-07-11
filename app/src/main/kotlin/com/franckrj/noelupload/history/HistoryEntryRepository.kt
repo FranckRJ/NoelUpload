@@ -187,27 +187,26 @@ class HistoryEntryRepository private constructor(private val appContext: Context
      * Met à jour les infos sur la preview de l'entrée de [_listOfHistoryEntries] correspondant au [uploadInfos] sur
      * le main thread et dispatch les modifications.
      */
-    fun postUpdateThisUploadInfosPreview(uploadInfos: UploadInfos?) =
-        GlobalScope.launch(Dispatchers.Main) {
-            val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
-            val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.getOrNull(indexInList)
+    fun postUpdateThisUploadInfosPreview(uploadInfos: UploadInfos?) = GlobalScope.launch(Dispatchers.Main) {
+        val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
+        val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.getOrNull(indexInList)
 
-            if (uploadInfos != null && historyEntry != null) {
-                val newPreviewFile: File = getPreviewFileFromUploadInfos(uploadInfos)
+        if (uploadInfos != null && historyEntry != null) {
+            val newPreviewFile: File = getPreviewFileFromUploadInfos(uploadInfos)
 
-                if (newPreviewFile.exists()) {
-                    historyEntry.fileForPreview = newPreviewFile
-                    _listOfHistoryEntriesChanges.value.add(
-                        HistoryEntryChangeInfos(
-                            historyEntry.copy(),
-                            HistoryEntryChangeType.CHANGED,
-                            indexInList
-                        )
+            if (newPreviewFile.exists()) {
+                historyEntry.fileForPreview = newPreviewFile
+                _listOfHistoryEntriesChanges.value.add(
+                    HistoryEntryChangeInfos(
+                        historyEntry.copy(),
+                        HistoryEntryChangeType.CHANGED,
+                        indexInList
                     )
-                    _listOfHistoryEntriesChanges.updateValue()
-                }
+                )
+                _listOfHistoryEntriesChanges.updateValue()
             }
         }
+    }
 
     /**
      * Passe le [HistoryEntryInfos.isInCurrentUploadGroup] à false des entrées de [_listOfHistoryEntries] correspondant
@@ -271,23 +270,45 @@ class HistoryEntryRepository private constructor(private val appContext: Context
      * Ajoute une nouvelle entrée dans [_listOfHistoryEntries] correspondant au [uploadInfos] sur le main thread et
      * dispatch les modifications.
      */
-    suspend fun blockAddThisUploadInfos(uploadInfos: UploadInfos?) =
-        withContext(Dispatchers.Main) {
-            if (uploadInfos != null) {
-                GlobalScope.launch(Dispatchers.IO) {
-                    _uploadInfosDao.insertUploadInfos(uploadInfos)
-                }
-                _listOfHistoryEntries.add(uploadInfosToHistoryEntry(uploadInfos, false))
-                _listOfHistoryEntriesChanges.value.add(
-                    HistoryEntryChangeInfos(
-                        _listOfHistoryEntries.last().copy(),
-                        HistoryEntryChangeType.NEW,
-                        _listOfHistoryEntries.lastIndex
-                    )
-                )
-                _listOfHistoryEntriesChanges.updateValue()
+    suspend fun blockAddThisUploadInfos(uploadInfos: UploadInfos?) = withContext(Dispatchers.Main) {
+        if (uploadInfos != null) {
+            GlobalScope.launch(Dispatchers.IO) {
+                _uploadInfosDao.insertUploadInfos(uploadInfos)
             }
+            _listOfHistoryEntries.add(uploadInfosToHistoryEntry(uploadInfos, false))
+            _listOfHistoryEntriesChanges.value.add(
+                HistoryEntryChangeInfos(
+                    _listOfHistoryEntries.last().copy(),
+                    HistoryEntryChangeType.NEW,
+                    _listOfHistoryEntries.lastIndex
+                )
+            )
+            _listOfHistoryEntriesChanges.updateValue()
         }
+    }
+
+    /**
+     * Remet le status de l'[HistoryEntryInfos] correspondant à [uploadInfos] à [UploadStatus.UPLOADING] et le rajoute
+     * au groupe courant des uploads sur le main thread en dispatchant les modifications.
+     */
+    suspend fun blockReAddUploadInfosToCurrentGroup(uploadInfos: UploadInfos?) = withContext(Dispatchers.Main) {
+        val indexInList: Int = getIndexOfUploadInfosInList(uploadInfos)
+        val historyEntry: HistoryEntryInfos? = _listOfHistoryEntries.getOrNull(indexInList)
+
+        if (historyEntry != null) {
+            historyEntry.uploadStatus = UploadStatus.UPLOADING
+            historyEntry.uploadStatusMessage = "0"
+            historyEntry.isInCurrentUploadGroup = true
+            _listOfHistoryEntriesChanges.value.add(
+                HistoryEntryChangeInfos(
+                    historyEntry.copy(),
+                    HistoryEntryChangeType.CHANGED,
+                    indexInList
+                )
+            )
+            _listOfHistoryEntriesChanges.updateValue()
+        }
+    }
 
     /**
      * Type d'un changement dans [_listOfHistoryEntries].

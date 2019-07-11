@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
 
             historyEntryMenuDialog.arguments = args
             historyEntryMenuDialog.show(supportFragmentManager, "HistoryEntryMenuDialog")
+            //TODO: bloquer la copie d'upload pendant l'ouverture de cette fenêtre
         }
     }
 

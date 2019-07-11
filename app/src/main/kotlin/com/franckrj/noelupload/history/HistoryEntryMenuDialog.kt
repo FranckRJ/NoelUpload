@@ -12,6 +12,7 @@ import androidx.core.view.marginBottom
 import androidx.core.view.marginTop
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.lifecycleScope
 import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
@@ -19,6 +20,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.franckrj.noelupload.R
 import com.franckrj.noelupload.databinding.DialogHistoryEntryMenuBinding
 import com.franckrj.noelupload.upload.UploadInfos
+import com.franckrj.noelupload.upload.UploadViewModel
 import com.franckrj.noelupload.utils.Utils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +89,32 @@ class HistoryEntryMenuDialog : DialogFragment() {
         }, 100)
     }
 
+    /**
+     * Partage le lien direct de l'image [directLinkToShare].
+     */
+    private fun shareThisDirectLinkOfHistoryEntry(directLinkToShare: String) {
+        val sharingIntent = Intent(Intent.ACTION_SEND)
+        sharingIntent.type = "text/plain"
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, directLinkToShare)
+        startActivity(Intent.createChooser(sharingIntent, resources.getString(R.string.share)))
+    }
+
+    /**
+     * Reupload l'[_uploadInfos] actuel, retourne vrai si l'upload a pu commencer ou faux s'il y a une erreur.
+     */
+    private fun reuploadCurrentHistoryEntry(): Boolean {
+        val uploadInfos = _uploadInfos
+
+        if (uploadInfos != null && uploadInfos.imageUri.isNotEmpty()) {
+            val uploadViewModel: UploadViewModel =
+                ViewModelProviders.of(requireActivity()).get(UploadViewModel::class.java)
+            uploadViewModel.addFileFromUploadInfosToListOfFilesToUploadAndStartUpload(uploadInfos)
+            return true
+        }
+
+        return false
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val builder = MaterialAlertDialogBuilder(requireActivity())
         val currArgs: Bundle? = arguments
@@ -141,6 +169,8 @@ class HistoryEntryMenuDialog : DialogFragment() {
                 _binding.infosChipHistoryEntryMenuDialog.visibility = View.VISIBLE
                 _binding.infosChipHistoryEntryMenuDialog.setChipBackgroundColorResource(R.color.colorTransparentBackgroundError)
                 _binding.infosChipHistoryEntryMenuDialog.setText(R.string.errorImageHasNotBeenUploaded)
+                _binding.shareOrReuploadImageHistoryEntryMenuDialog.contentDescription = getString(R.string.reupload)
+                _binding.shareOrReuploadImageHistoryEntryMenuDialog.setImageResource(R.drawable.ic_file_upload_white_36dp)
             }
         }
 
@@ -167,15 +197,15 @@ class HistoryEntryMenuDialog : DialogFragment() {
     }
 
     /**
-     * Partage le lien direct de l'image de l'[_uploadInfos] ou affiche une erreur si le lien est invalide.
+     * Partage ou reupload l'image de l'[_uploadInfos] selon ce qui est possible, ferme le dialog si nécessaire
+     * ou affiche une erreur.
      */
-    fun shareDirectLinkOfHistoryEntry() {
+    fun shareOrReuploadHistoryEntry() {
         _directLinkOfImage.let { directLinkOfImage: String? ->
             if (directLinkOfImage != null) {
-                val sharingIntent = Intent(Intent.ACTION_SEND)
-                sharingIntent.type = "text/plain"
-                sharingIntent.putExtra(Intent.EXTRA_TEXT, directLinkOfImage)
-                startActivity(Intent.createChooser(sharingIntent, resources.getString(R.string.share)))
+                shareThisDirectLinkOfHistoryEntry(directLinkOfImage)
+                dismiss()
+            } else if (reuploadCurrentHistoryEntry()) {
                 dismiss()
             } else {
                 Toast.makeText(requireContext(), R.string.errorInvalidLink, Toast.LENGTH_SHORT).show()

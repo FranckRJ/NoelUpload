@@ -11,9 +11,10 @@
     <string name="errorUploadAlreadyRunning">Erreur, un upload est déjà en cours.</string>
     <string name="imagePreview">Aperçu de l\'image</string>
     <string name="error">Erreur</string>
-    <string name="errorUploadFailed">Erreur, upload raté.</string>
+    <string name="fileToUploadNotFound">le fichier à upload n\'a pas été trouvé</string>
     <string name="delete">Supprimer</string>
     <string name="errorImageHasNotBeenUploaded">Erreur, l\'image n\'a pas été upload.</string>
     <string name="share">Partager</string>
     <string name="askConfirmation">Confirmer ?</string>
+    <string name="reupload">Reupload</string>
 </resources>

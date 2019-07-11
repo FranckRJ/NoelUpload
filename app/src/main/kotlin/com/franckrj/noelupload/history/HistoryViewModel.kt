@@ -66,7 +66,8 @@ class HistoryViewModel(private val app: Application) : AndroidViewModel(app) {
 
     /**
      * Met à jour l'[UploadInfos] représenté par [historyEntry] dans [_currentGroupOfUploads] s'il est présent.
-     * Le supprime si jamais le status de l'upload vaut [UploadStatus.ERROR] et màj l'historique.
+     * Le supprime si jamais le status de l'upload vaut [UploadStatus.ERROR] et màj l'historique, l'ajoute dans la liste
+     * s'il n'est pas présent alors qu'il doit l'être.
      */
     private fun updateElementInCurrentUploadGroup(historyEntry: HistoryEntryInfos) {
         val uploadInfos: UploadInfos = historyEntryToUploadInfo(historyEntry)
@@ -83,6 +84,9 @@ class HistoryViewModel(private val app: Application) : AndroidViewModel(app) {
                 }
                 return
             }
+        }
+        if (historyEntry.isInCurrentUploadGroup && historyEntry.uploadStatus != UploadStatus.ERROR) {
+            _currentGroupOfUploads.add(uploadInfos)
         }
     }
 

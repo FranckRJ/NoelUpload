@@ -134,7 +134,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         val cachedFile = _historyEntryRepo.getCachedFileFromUploadInfo(uploadInfos)
 
         if (!FileUriUtils.saveUriContentToFile(Uri.parse(uploadInfos.imageUri), cachedFile, app)) {
-            throw Exception(app.getString(R.string.errorUploadFailed))
+            /* Le fichier ne sera pas créé donc l'upload ratera. */
+            return@withContext
         }
 
         try {
@@ -232,7 +233,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                         uploadStatusMessage = linkOfImage
                         fileToUpload.delete()
                     } else {
-                        throw Exception(app.getString(R.string.errorUploadFailed))
+                        throw Exception(app.getString(R.string.fileToUploadNotFound))
                     }
                 } catch (e: Exception) {
                     uploadStatus = UploadStatus.ERROR
@@ -266,6 +267,28 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             _historyEntryRepo.blockAddThisUploadInfos(newUploadInfos)
             postCreatePreviewForThisUploadInfos(newUploadInfos)
             createCachedFileForUpload(newUploadInfos)
+            _listOfFilesToUpload.add(newUploadInfos)
+            _nbOfPendingsAddToUploadList.decrementAndGet()
+            startUploadThisImage(newUploadInfos)
+        }
+    }
+
+    /**
+     * Ajoute l'image représentée par [uploadInfosToUse] à la liste des uploads et commence à uploader ces images.
+     * Si l'[uploadInfosToUse] n'a pas d'image en cache à utiliser pour l'upload alors l'upload ratera.
+     */
+    fun addFileFromUploadInfosToListOfFilesToUploadAndStartUpload(uploadInfosToUse: UploadInfos) {
+        _nbOfPendingsAddToUploadList.incrementAndGet()
+
+        viewModelScope.launch(Dispatchers.Main) {
+            val newUploadInfos = UploadInfos(
+                "",
+                uploadInfosToUse.imageName,
+                uploadInfosToUse.imageUri,
+                uploadInfosToUse.uploadTimeInMs
+            )
+
+            _historyEntryRepo.blockReAddUploadInfosToCurrentGroup(newUploadInfos)
             _listOfFilesToUpload.add(newUploadInfos)
             _nbOfPendingsAddToUploadList.decrementAndGet()
             startUploadThisImage(newUploadInfos)
