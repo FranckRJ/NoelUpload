@@ -90,7 +90,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     private suspend fun uploadThisImage(imageFile: File, fileType: String?, uploadInfos: UploadInfos): String {
         val fileContent = FileUriUtils.readFileContent(imageFile)
 
-        return if (fileContent != null) {
+        if (fileContent != null) {
             val uploadResponse: String = uploadBitmapImage(
                 fileContent.toByteArray(),
                 fileType ?: "image/*",
@@ -98,7 +98,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             )
 
             if (Utils.checkIfItsANoelshackImageLink(uploadResponse)) {
-                Utils.noelshackToDirectLink(uploadResponse)
+                return Utils.noelshackToDirectLink(uploadResponse)
             } else {
                 throw Exception(uploadResponse)
             }

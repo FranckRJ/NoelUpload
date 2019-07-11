@@ -69,16 +69,16 @@ object Utils {
         }
 
         linkToCheck = linkToCheck.toLowerCase(Locale.US)
-        return if (!linkToCheck.endsWith(".php") && !linkToCheck.endsWith(".com/") && !linkToCheck.endsWith(".json")) {
+        if (!linkToCheck.endsWith(".php") && !linkToCheck.endsWith(".com/") && !linkToCheck.endsWith(".json")) {
             if (linkToCheck.startsWith("http://") || linkToCheck.startsWith("https://")) {
                 linkToCheck = linkToCheck.substring(linkToCheck.indexOf("://") + 3)
             }
 
-            linkToCheck.startsWith("image.noelshack.com/") || linkToCheck.startsWith("www.noelshack.com/") ||
+            return linkToCheck.startsWith("image.noelshack.com/") || linkToCheck.startsWith("www.noelshack.com/") ||
                     linkToCheck.startsWith("noelshack.com/")
-        } else {
-            false
         }
+
+        return false
     }
 
     /**
