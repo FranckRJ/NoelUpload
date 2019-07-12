@@ -178,9 +178,7 @@ class MainActivity : AppCompatActivity(), DialogInterface.OnDismissListener {
                             }
                             HistoryEntryRepository.HistoryEntryChangeType.CHANGED -> {
                                 _adapterForHistory.notifyItemChanged(historyEntryChange.changeIndex)
-                                if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.FINISHED) {
-                                    tryToCopyLinksFromUploadGroup()
-                                } else if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.ERROR) {
+                                if (historyEntryChange.newHistoryEntry.uploadStatus == UploadStatus.ERROR) {
                                     Toast.makeText(
                                         this,
                                         getString(
@@ -189,6 +187,9 @@ class MainActivity : AppCompatActivity(), DialogInterface.OnDismissListener {
                                         ),
                                         Toast.LENGTH_LONG
                                     ).show()
+                                }
+                                if (historyEntryChange.newHistoryEntry.uploadStatus != UploadStatus.UPLOADING) {
+                                    tryToCopyLinksFromUploadGroup()
                                 }
                             }
                         }
