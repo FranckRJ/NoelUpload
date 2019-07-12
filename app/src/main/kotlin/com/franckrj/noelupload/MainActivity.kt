@@ -2,6 +2,7 @@ package com.franckrj.noelupload
 
 import android.app.Activity
 import android.content.ClipData
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
@@ -28,7 +29,7 @@ import com.franckrj.noelupload.utils.Utils
 /**
  * Activité principale pour consulter l'historique des uploads et upload des nouvelles images.
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), DialogInterface.OnDismissListener {
     companion object {
         private const val CHOOSE_IMAGE_REQUEST_CODE: Int = 38
         private const val ACTION_UPLOAD_IMAGE: String = "com.franckrj.noelupload.UPLOAD_IMAGE"
@@ -43,7 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Callback appelé lorsqu'un item est cliqué dans la liste, affiche un dialog contenant le menu de l'entrée si
-     * l'image n'est pas entrain d'être upload.
+     * l'image n'est pas entrain d'être upload et met en pause la copie des liens.
      */
     private fun itemInHistoryListClicked(historyEntryInfos: HistoryEntryInfos) {
         if (historyEntryInfos.uploadStatus != UploadStatus.UPLOADING) {
@@ -57,7 +58,7 @@ class MainActivity : AppCompatActivity() {
 
             historyEntryMenuDialog.arguments = args
             historyEntryMenuDialog.show(supportFragmentManager, "HistoryEntryMenuDialog")
-            //TODO: bloquer la copie d'upload pendant l'ouverture de cette fenêtre
+            _pauseCopyOfUploadLinks = true
         }
     }
 
@@ -245,6 +246,14 @@ class MainActivity : AppCompatActivity() {
             consumeIntent(data)
         }
 
+        _pauseCopyOfUploadLinks = false
+        tryToCopyLinksFromUploadGroup()
+    }
+
+    /**
+     * Désactive la pause de la copie des liens initiée à l'ouverture de la popup lors de sa fermeture.
+     */
+    override fun onDismiss(dialog: DialogInterface?) {
         _pauseCopyOfUploadLinks = false
         tryToCopyLinksFromUploadGroup()
     }

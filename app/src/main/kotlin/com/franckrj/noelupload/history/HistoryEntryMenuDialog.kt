@@ -1,6 +1,7 @@
 package com.franckrj.noelupload.history
 
 import android.app.Dialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -11,6 +12,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.marginBottom
 import androidx.core.view.marginTop
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.lifecycleScope
@@ -180,6 +182,15 @@ class HistoryEntryMenuDialog : DialogFragment() {
     override fun onPause() {
         dismiss()
         super.onPause()
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        val parentActivity: FragmentActivity? = activity
+
+        if (parentActivity is DialogInterface.OnDismissListener) {
+            parentActivity.onDismiss(dialog)
+        }
     }
 
     /**
