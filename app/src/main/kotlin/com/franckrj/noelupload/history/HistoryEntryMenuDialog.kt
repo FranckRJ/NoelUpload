@@ -24,6 +24,7 @@ import com.franckrj.noelupload.databinding.DialogHistoryEntryMenuBinding
 import com.franckrj.noelupload.upload.UploadInfos
 import com.franckrj.noelupload.upload.UploadViewModel
 import com.franckrj.noelupload.utils.Utils
+import com.franckrj.noelupload.utils.getDrawableCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -149,13 +150,13 @@ class HistoryEntryMenuDialog : DialogFragment() {
 
             Glide.with(this)
                 .load(fileForPreview ?: Utils.noelshackLinkToPreviewLink(newUploadInfos.imageBaseLink))
-                .error(R.drawable.ic_file_download_failed_white_86dp)
+                .error(requireContext().getDrawableCompat(R.drawable.ic_file_download_failed_white_86dp))
                 .centerCrop()
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .into(_binding.imagepreviewImageHistoryEntryMenuDialog)
         } else {
             Glide.with(this)
-                .load(R.drawable.ic_file_downloading_white_86dp)
+                .load(requireContext().getDrawableCompat(R.drawable.ic_file_downloading_white_86dp))
                 .centerCrop()
                 .into(_binding.imagepreviewImageHistoryEntryMenuDialog)
         }
@@ -172,7 +173,11 @@ class HistoryEntryMenuDialog : DialogFragment() {
                 _binding.infosChipHistoryEntryMenuDialog.setChipBackgroundColorResource(R.color.colorTransparentBackgroundError)
                 _binding.infosChipHistoryEntryMenuDialog.setText(R.string.errorImageHasNotBeenUploaded)
                 _binding.shareOrReuploadImageHistoryEntryMenuDialog.contentDescription = getString(R.string.reupload)
-                _binding.shareOrReuploadImageHistoryEntryMenuDialog.setImageResource(R.drawable.ic_file_upload_white_36dp)
+                _binding.shareOrReuploadImageHistoryEntryMenuDialog.setImageDrawable(
+                    requireContext().getDrawableCompat(
+                        R.drawable.ic_file_upload_white_36dp
+                    )
+                )
             }
         }
 
