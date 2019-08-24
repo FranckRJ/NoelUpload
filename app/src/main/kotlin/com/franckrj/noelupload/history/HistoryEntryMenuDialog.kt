@@ -14,7 +14,7 @@ import androidx.core.view.marginTop
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
@@ -109,8 +109,7 @@ class HistoryEntryMenuDialog : DialogFragment() {
         val uploadInfos = _uploadInfos
 
         if (uploadInfos != null && uploadInfos.imageUri.isNotEmpty()) {
-            val uploadViewModel: UploadViewModel =
-                ViewModelProviders.of(requireActivity()).get(UploadViewModel::class.java)
+            val uploadViewModel: UploadViewModel = ViewModelProvider(requireActivity()).get(UploadViewModel::class.java)
             uploadViewModel.addFileFromUploadInfosToListOfFilesToUploadAndStartUpload(uploadInfos)
             return true
         }
@@ -132,14 +131,14 @@ class HistoryEntryMenuDialog : DialogFragment() {
             _directLinkOfImage =
                 Utils.noelshackToDirectLink(baseLinkOfImage).takeIf { Utils.checkIfItsANoelshackImageLink(it) }
 
-            try {
-                newUploadInfos = UploadInfos(
+            newUploadInfos = try {
+                UploadInfos(
                     baseLinkOfImage,
                     currArgs.getString(ARG_UPLOAD_IMAGE_NAME, ""),
                     currArgs.getString(ARG_UPLOAD_IMAGE_URI, "").ifEmpty { throw Exception() },
                     currArgs.getLong(ARG_UPLOAD_TIME_IN_MS, 0).also { if (it == 0L) throw Exception() })
             } catch (e: Exception) {
-                newUploadInfos = null
+                null
             }
             _uploadInfos = newUploadInfos
         }

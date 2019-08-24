@@ -1,11 +1,11 @@
 package com.franckrj.noelupload.upload
 
 import okhttp3.MediaType
-import okio.Okio
 import okio.BufferedSink
 import okhttp3.RequestBody
-import okhttp3.internal.Util
+import okhttp3.internal.closeQuietly
 import okio.Source
+import okio.source
 import java.io.ByteArrayInputStream
 import java.io.IOException
 
@@ -43,17 +43,17 @@ class ProgressRequestBody(
             var total: Long = 0
             var read: Long
 
-            source = Okio.source(ByteArrayInputStream(content))
+            source = ByteArrayInputStream(content).source()
 
-            read = source.read(sink.buffer(), SEGMENT_SIZE)
+            read = source.read(sink.buffer, SEGMENT_SIZE)
             while (read != -1L) {
                 total += read
                 sink.flush()
                 listenerForProgress(total, contentLength(), linkedUploadInfos)
-                read = source.read(sink.buffer(), SEGMENT_SIZE)
+                read = source.read(sink.buffer, SEGMENT_SIZE)
             }
         } finally {
-            Util.closeQuietly(source)
+            source?.closeQuietly()
         }
     }
 }

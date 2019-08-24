@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -59,7 +60,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      */
     @Suppress("RedundantSuspendModifier")
     private suspend fun uploadBitmapImage(fileContent: ByteArray, fileType: String, uploadInfos: UploadInfos): String {
-        val mediaTypeForFile = MediaType.parse(fileType)
+        val mediaTypeForFile: MediaType? = fileType.toMediaTypeOrNull()
         val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
             "fichier",
             uploadInfos.imageName,
@@ -75,7 +76,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             .readTimeout(5, TimeUnit.MINUTES)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
-        val responseString: String? = client.newCall(request).execute().body()?.string()
+        val responseString: String? = client.newCall(request).execute().body?.string()
 
         if (responseString.isNullOrEmpty()) {
             throw Exception(null.toString())
