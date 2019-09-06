@@ -14,7 +14,7 @@ object Utils {
 
         if (clipboard != null) {
             val clip = ClipData.newPlainText(textToCopy, textToCopy)
-            clipboard.primaryClip = clip
+            clipboard.setPrimaryClip(clip)
         }
     }
 
