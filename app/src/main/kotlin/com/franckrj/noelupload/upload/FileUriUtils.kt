@@ -5,8 +5,10 @@ import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -102,7 +104,7 @@ object FileUriUtils {
         withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uriToSave)!!.use { inputStream ->
-                    FileOutputStream(destinationFile, false).use { outputFile ->
+                    FileOutputStream(destinationFile).use { outputFile ->
                         val buffer = ByteArray(8192)
 
                         var length = inputStream.read(buffer)
@@ -133,21 +135,30 @@ object FileUriUtils {
     ): Boolean =
         withContext(Dispatchers.IO) {
             try {
+                val jpegRatio = 85
                 val previewBitmap: Bitmap
                 val bitmapOption = BitmapFactory.Options()
+                val rotationAngle: Float
 
-                context.contentResolver.openInputStream(uriToUse)!!.use { inputStream ->
-                    bitmapOption.inJustDecodeBounds = true
-                    BitmapFactory.decodeStream(inputStream, null, bitmapOption)
-                }
-                previewBitmap = context.contentResolver.openInputStream(uriToUse)!!.use { inputStream ->
-                    bitmapOption.inJustDecodeBounds = false
-                    bitmapOption.inSampleSize =
-                        computeLossySampleSize(bitmapOption.outWidth, bitmapOption.outHeight, maxWidth, maxHeight)
-                    BitmapFactory.decodeStream(inputStream, null, bitmapOption)!!
-                }
-                FileOutputStream(previewFile, false).use { outputStream ->
-                    previewBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                saveUriContentToFile(uriToUse, previewFile, context)
+                rotationAngle = getRotationMatrixFromExif(previewFile)
+
+                bitmapOption.inJustDecodeBounds = true
+                BitmapFactory.decodeFile(previewFile.path, bitmapOption)
+
+                bitmapOption.inJustDecodeBounds = false
+                bitmapOption.inSampleSize =
+                    computeLossySampleSize(bitmapOption.outWidth, bitmapOption.outHeight, maxWidth, maxHeight)
+                previewBitmap = BitmapFactory.decodeFile(previewFile.path, bitmapOption)
+
+                FileOutputStream(previewFile).use { outputStream ->
+                    val rotatedPreviewBitmap =
+                        if (rotationAngle != 0f) {
+                            rotateBitmap(previewBitmap, rotationAngle)
+                        } else {
+                            previewBitmap
+                        }
+                    rotatedPreviewBitmap.compress(Bitmap.CompressFormat.JPEG, jpegRatio, outputStream)
                 }
 
                 true
@@ -155,4 +166,28 @@ object FileUriUtils {
                 false
             }
         }
+
+    /**
+     * Retourne la rotation qui doit être appliquée à l'image pour appliquer l'exif de rotation.
+     */
+    suspend fun getRotationMatrixFromExif(imageFile: File): Float = withContext(Dispatchers.IO) {
+        val exifInterface = ExifInterface(imageFile)
+
+        return@withContext when (exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0)) {
+            1, 2 -> 0f
+            5, 6 -> 90f
+            3, 4 -> 180f
+            7, 8 -> 270f
+            else -> 0f
+        }
+    }
+
+    /**
+     * Retourne une bitmap rotationnée.
+     */
+    suspend fun rotateBitmap(bitmap: Bitmap, angle: Float): Bitmap = withContext(Dispatchers.IO) {
+        val matrix = Matrix()
+        matrix.setRotate(angle)
+        return@withContext Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
 }
