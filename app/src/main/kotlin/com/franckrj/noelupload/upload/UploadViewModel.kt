@@ -58,32 +58,32 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
      * Upload l'image passée en paramètre sur noelshack et retourne la réponse du serveur ou throw si erreur.
      * La fonction doit être appelée dans un background thread.
      */
-    @Suppress("RedundantSuspendModifier")
-    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileType: String, uploadInfos: UploadInfos): String {
-        val mediaTypeForFile: MediaType? = fileType.toMediaTypeOrNull()
-        val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
-            "fichier",
-            uploadInfos.imageName,
-            ProgressRequestBody(mediaTypeForFile, fileContent, uploadInfos, ::uploadProgressChanged)
-        ).build()
-        val request = Request.Builder()
-            .url("http://www.noelshack.com/api.php")
-            .post(req)
-            .build()
+    private suspend fun uploadBitmapImage(fileContent: ByteArray, fileType: String, uploadInfos: UploadInfos): String =
+        withContext<String>(Dispatchers.IO) {
+            val mediaTypeForFile: MediaType? = fileType.toMediaTypeOrNull()
+            val req = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
+                "fichier",
+                uploadInfos.imageName,
+                ProgressRequestBody(mediaTypeForFile, fileContent, uploadInfos, ::uploadProgressChanged)
+            ).build()
+            val request = Request.Builder()
+                .url("http://www.noelshack.com/api.php")
+                .post(req)
+                .build()
 
-        val client = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(5, TimeUnit.MINUTES)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-        val responseString: String? = client.newCall(request).execute().body?.string()
+            val client = OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.MINUTES)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .build()
+            val responseString: String? = client.newCall(request).execute().body?.string()
 
-        if (responseString.isNullOrEmpty()) {
-            throw Exception(null.toString())
-        } else {
-            return responseString
+            if (responseString.isNullOrEmpty()) {
+                throw Exception(null.toString())
+            } else {
+                return@withContext responseString
+            }
         }
-    }
 
     /**
      * Upload l'image passée en paramètre et retourne son lien noelshack ou throw en cas d'erreur.
