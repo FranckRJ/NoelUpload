@@ -132,7 +132,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     /**
      * Supprime les tag EXIF lié au GPS sur une image.
      */
-    private fun removeExifGpsTagFromImageFile(imageFile: File) {
+    private suspend fun removeExifGpsTagFromImageFile(imageFile: File) = withContext(Dispatchers.IO) {
         try {
             val exifInterface = ExifInterface(imageFile)
             exifInterface.setGpsInfo(Location(""))
@@ -163,12 +163,17 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
     /**
      * Crée une nouvelle image avec le ratio JPEG précisé et dont les dimensions sont divisées par [dimReduceFactor].
      */
-    private fun compressImageFileWithParam(sourceImage: File, destImage: File, jpegRatio: Int, dimReduceFactor: Int) {
+    private suspend fun compressImageFileWithParam(
+        sourceImage: File,
+        destImage: File,
+        jpegRatio: Int,
+        dimReduceFactor: Int
+    ) = withContext(Dispatchers.IO) {
         val bitmapOption = BitmapFactory.Options()
         bitmapOption.inSampleSize = dimReduceFactor
         val bitmap = BitmapFactory.decodeFile(sourceImage.path, bitmapOption)!!
-        FileOutputStream(destImage).use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, jpegRatio, it)
+        FileOutputStream(destImage).use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, jpegRatio, outputStream)
         }
     }
 
