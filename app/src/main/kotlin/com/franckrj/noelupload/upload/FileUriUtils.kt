@@ -141,7 +141,7 @@ object FileUriUtils {
                 val rotationAngle: Float
 
                 saveUriContentToFile(uriToUse, previewFile, context)
-                rotationAngle = getRotationMatrixFromExif(previewFile)
+                rotationAngle = getRotationAngleFromExif(previewFile)
 
                 bitmapOption.inJustDecodeBounds = true
                 BitmapFactory.decodeFile(previewFile.path, bitmapOption)
@@ -170,7 +170,7 @@ object FileUriUtils {
     /**
      * Retourne la rotation qui doit être appliquée à l'image pour appliquer l'exif de rotation.
      */
-    suspend fun getRotationMatrixFromExif(imageFile: File): Float = withContext(Dispatchers.IO) {
+    suspend fun getRotationAngleFromExif(imageFile: File): Float = withContext(Dispatchers.IO) {
         val exifInterface = ExifInterface(imageFile)
 
         return@withContext when (exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0)) {

@@ -190,14 +190,16 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             return@withContext
         }
 
-        removeExifGpsTagFromImageFile(cachedFile)
+        val rotationAngle = FileUriUtils.getRotationAngleFromExif(cachedFile)
 
+        var imageIsCompressed = false
         val maxImageSize = 4_000_000
         val jpegRatio = 80
         if (cachedFile.length() > maxImageSize) {
             val compressedCachedFile = File(cachedFile.path + ".resized.tmp")
             var dimReduceFactor = 1
             compressImageFileWithParam(cachedFile, compressedCachedFile, jpegRatio, dimReduceFactor)
+            imageIsCompressed = true
 
             while (compressedCachedFile.length() > maxImageSize) {
                 dimReduceFactor += 1
@@ -206,6 +208,16 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
 
             cachedFile.delete()
             compressedCachedFile.renameTo(cachedFile)
+        }
+
+        if (!imageIsCompressed && rotationAngle == 0f) {
+            removeExifGpsTagFromImageFile(cachedFile)
+        } else if (rotationAngle != 0f) {
+            val bitmap = BitmapFactory.decodeFile(cachedFile.path)
+            val rotatedBitmap = FileUriUtils.rotateBitmap(bitmap, rotationAngle)
+            FileOutputStream(cachedFile).use { outputStream ->
+                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, jpegRatio, outputStream)
+            }
         }
     }
 
