@@ -1,6 +1,8 @@
 package com.franckrj.noelupload.upload
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.Location
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
@@ -19,6 +21,7 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -127,20 +130,11 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         }
 
     /**
-     * Créé une copie du fichier représenté par [uploadInfos]. Si cette copie possède des données EXIF les tags de GPS
-     * seront supprimés, throw en cas d'erreur de création de la copie.
-     * La copie est sauvegardées dans le cache, elle doit être supprimée après utilisation.
+     * Supprime les tag EXIF lié au GPS sur une image.
      */
-    private suspend fun createCachedFileForUpload(uploadInfos: UploadInfos) = withContext(Dispatchers.IO) {
-        val cachedFile = _historyEntryRepo.getCachedFileFromUploadInfo(uploadInfos)
-
-        if (!FileUriUtils.saveUriContentToFile(Uri.parse(uploadInfos.imageUri), cachedFile, app)) {
-            /* Le fichier ne sera pas créé donc l'upload ratera. */
-            return@withContext
-        }
-
+    private fun removeExifGpsTagFromImageFile(imageFile: File) {
         try {
-            val exifInterface = ExifInterface(cachedFile)
+            val exifInterface = ExifInterface(imageFile)
             exifInterface.setGpsInfo(Location(""))
             exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, null)
             exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, null)
@@ -163,6 +157,50 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
             exifInterface.saveAttributes()
         } catch (e: Exception) {
             /* Le fichier ne supporte pas les EXIF c'est pas grave. */
+        }
+    }
+
+    /**
+     * Crée une nouvelle image avec le ratio JPEG précisé et dont les dimensions sont divisées par [dimReduceFactor].
+     */
+    private fun compressImageFileWithParam(sourceImage: File, destImage: File, jpegRatio: Int, dimReduceFactor: Int) {
+        val bitmapOption = BitmapFactory.Options()
+        bitmapOption.inSampleSize = dimReduceFactor
+        val bitmap = BitmapFactory.decodeFile(sourceImage.path, bitmapOption)!!
+        FileOutputStream(destImage).use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, jpegRatio, it)
+        }
+    }
+
+    /**
+     * Créé une copie du fichier représenté par [uploadInfos]. Si cette copie possède des données EXIF les tags de GPS
+     * seront supprimés, throw en cas d'erreur de création de la copie.
+     * La copie est sauvegardées dans le cache, elle doit être supprimée après utilisation.
+     */
+    private suspend fun createCachedFileForUpload(uploadInfos: UploadInfos) = withContext(Dispatchers.IO) {
+        val cachedFile = _historyEntryRepo.getCachedFileFromUploadInfo(uploadInfos)
+
+        if (!FileUriUtils.saveUriContentToFile(Uri.parse(uploadInfos.imageUri), cachedFile, app)) {
+            /* Le fichier ne sera pas créé donc l'upload ratera. */
+            return@withContext
+        }
+
+        removeExifGpsTagFromImageFile(cachedFile)
+
+        val maxImageSize = 4_000_000
+        val jpegRatio = 80
+        if (cachedFile.length() > maxImageSize) {
+            val compressedCachedFile = File(cachedFile.path + ".resized.tmp")
+            var dimReduceFactor = 1
+            compressImageFileWithParam(cachedFile, compressedCachedFile, jpegRatio, dimReduceFactor)
+
+            while (compressedCachedFile.length() > maxImageSize) {
+                dimReduceFactor += 1
+                compressImageFileWithParam(cachedFile, compressedCachedFile, jpegRatio, dimReduceFactor)
+            }
+
+            cachedFile.delete()
+            compressedCachedFile.renameTo(cachedFile)
         }
     }
 
