@@ -215,6 +215,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
         } else if (rotationAngle != 0f) {
             val bitmap = BitmapFactory.decodeFile(cachedFile.path)
             val rotatedBitmap = FileUriUtils.rotateBitmap(bitmap, rotationAngle)
+            // TODO: Si l'image était un PNG, la compresser en PNG à la place.
             FileOutputStream(cachedFile).use { outputStream ->
                 rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, jpegRatio, outputStream)
             }
