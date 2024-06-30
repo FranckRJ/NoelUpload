@@ -226,10 +226,10 @@ class MainActivity : AppCompatActivity(), DialogInterface.OnDismissListener {
     /**
      * Intercepte les nouveaux intent reçus et les envoit à [consumeIntent].
      */
-    override fun onNewIntent(newIntent: Intent?) {
-        super.onNewIntent(newIntent)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
 
-        consumeIntent(newIntent)
+        consumeIntent(intent)
     }
 
     /**
