@@ -70,7 +70,7 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 ProgressRequestBody(mediaTypeForFile, fileContent, uploadInfos, ::uploadProgressChanged)
             ).build()
             val request = Request.Builder()
-                .url("http://www.noelshack.com/api.php")
+                .url("https://www.noelshack.com/api.php")
                 .post(req)
                 .build()
 
@@ -78,6 +78,8 @@ class UploadViewModel(private val app: Application) : AndroidViewModel(app) {
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.MINUTES)
                 .writeTimeout(30, TimeUnit.SECONDS)
+                .followRedirects(true)
+                .followSslRedirects(true)
                 .build()
             val responseString: String? = client.newCall(request).execute().body?.string()
 
